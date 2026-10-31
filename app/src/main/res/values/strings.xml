@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MiTV Launcher</string>
+    <string name="version">wersja %1$s</string>
+    <string name="section_favorites">Ulubione</string>
+    <string name="section_shortcuts">Skróty</string>
+    <string name="section_all">Wszystkie aplikacje (%1$d)</string>
+    <string name="hint_favorites">Przytrzymaj OK na dowolnej aplikacji, żeby dodać ją do ulubionych.</string>
+    <string name="action_settings">Ustawienia</string>
+    <string name="action_wifi">Wi-Fi</string>
+    <string name="action_update">Aktualizuj</string>
+    <string name="action_update_to">Aktualizuj do %1$s</string>
+    <string name="badge_new">NOWA</string>
+    <string name="fav_added">Dodano do ulubionych: %1$s</string>
+    <string name="fav_removed">Usunięto z ulubionych: %1$s</string>
+    <string name="cannot_open">Nie da się otworzyć: %1$s</string>
+    <string name="cannot_open_generic">Nie da się otworzyć tego ekranu na tym urządzeniu.</string>
+    <string name="update_checking">Sprawdzam, czy jest nowa wersja…</string>
+    <string name="up_to_date">Masz najnowszą wersję (%1$s).</string>
+    <string name="update_check_failed">Nie udało się sprawdzić aktualizacji. Sprawdź połączenie z internetem.</string>
+    <string name="update_title">Aktualizacja do wersji %1$s</string>
+    <string name="update_progress">Pobieranie… %1$d%%</string>
+    <string name="update_failed">Nie udało się pobrać aktualizacji. Spróbuj ponownie.</string>
+    <string name="permission_title">Potrzebna jednorazowa zgoda</string>
+    <string name="permission_message">Android musi pozwolić tej aplikacji instalować aktualizacje. Na następnym ekranie włącz zgodę dla MiTV Launcher.\n\nJeśli ten ekran się nie otworzy: Ustawienia → Preferencje urządzenia → Zabezpieczenia i ograniczenia → Nieznane źródła → MiTV Launcher.</string>
+    <string name="permission_open">Otwórz ustawienia</string>
+</resources>

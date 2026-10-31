@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta 4optima -->
+    <color name="accent">#FE5B00</color>
+    <color name="navy">#1E293B</color>
+    <color name="neutral">#64748B</color>
+    <color name="bg">#0F172A</color>
+    <color name="tile">#1E293B</color>
+    <color name="tile_focused">#2B3A52</color>
+    <color name="text">#F1F5F9</color>
+    <color name="text_muted">#94A3B8</color>
+</resources>
