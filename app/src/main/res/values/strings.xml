@@ -37,7 +37,6 @@
     <string name="hero_wifi">Sieć i połączenie z internetem</string>
     <string name="hero_update">Sprawdź, czy jest nowa wersja launchera</string>
     <string name="hero_update_new">Nowa wersja czeka na instalację</string>
-    <string name="footer">MiTV Launcher %1$s  ·  przytrzymaj OK na aplikacji, żeby dodać ją do ulubionych</string>
     <string name="section_apps">Aplikacje</string>
     <string name="section_recent">Ostatnio oglądane</string>
     <string name="hero_recent">Ostatnio</string>
@@ -56,4 +55,12 @@
     <string name="w_showers">Przelotne opady</string>
     <string name="w_snow_showers">Przelotny śnieg</string>
     <string name="w_storm">Burza</string>
+    <string name="panel_title">Skróty</string>
+    <string name="panel_settings_sub">Wszystkie ustawienia sticka</string>
+    <string name="panel_wifi_sub">Sieć i internet</string>
+    <string name="panel_update_sub">Sprawdź nową wersję launchera</string>
+    <string name="panel_update_ready">Wersja %1$s czeka na instalację</string>
+    <string name="panel_close">Zamknij</string>
+    <string name="panel_close_sub">Albo naciśnij Wstecz</string>
+    <string name="footer">MiTV Launcher %1$s  ·  przytrzymaj OK – ulubione  ·  przycisk w rogu – skróty</string>
 </resources>

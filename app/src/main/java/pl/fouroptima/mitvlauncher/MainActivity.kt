@@ -12,6 +12,10 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -31,6 +35,11 @@ class MainActivity : Activity() {
     private lateinit var favorites: Favorites
     private lateinit var updates: UpdateManager
     private lateinit var weather: Weather
+    private lateinit var panel: View
+    private lateinit var panelScrim: View
+    private lateinit var panelRows: ViewGroup
+    private lateinit var menuButton: View
+    private var focusBeforePanel: View? = null
     private var weatherInfo: WeatherInfo? = null
 
     private val io = Executors.newSingleThreadExecutor()
@@ -65,6 +74,7 @@ class MainActivity : Activity() {
         favorites = Favorites(this)
         updates = UpdateManager(this)
         weather = Weather(this)
+        setUpPanel()
         weatherInfo = weather.cached()
         showWeather()
         adapter = TileAdapter(::onTileClick, ::onTileLongClick, ::onTileFocus, SPAN)
@@ -124,10 +134,86 @@ class MainActivity : Activity() {
         grid.post { grid.scrollToPosition(0) }
     }
 
-    /** Wstecz na ekranie głównym nie zamyka launchera. */
+    /** Wstecz zamyka panel, a na ekranie głównym nie zamyka launchera. Menu na pilocie otwiera panel. */
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) return true
+        when (keyCode) {
+            KeyEvent.KEYCODE_BACK -> {
+                if (panel.visibility == View.VISIBLE) closePanel()
+                return true
+            }
+            KeyEvent.KEYCODE_MENU -> {
+                if (panel.visibility == View.VISIBLE) closePanel() else openPanel()
+                return true
+            }
+        }
         return super.onKeyDown(keyCode, event)
+    }
+
+    // ---------- Panel skrótów ----------
+
+    private fun setUpPanel() {
+        panel = findViewById(R.id.side_panel)
+        panelScrim = findViewById(R.id.panel_scrim)
+        panelRows = findViewById(R.id.panel_rows)
+        menuButton = findViewById(R.id.menu_button)
+        findViewById<TextView>(R.id.panel_version).text = getString(R.string.version, BuildConfig.VERSION_NAME)
+        menuButton.setOnClickListener { openPanel() }
+        menuButton.setOnFocusChangeListener { v, has ->
+            v.animate().scaleX(if (has) 1.15f else 1f).scaleY(if (has) 1.15f else 1f).setDuration(150).start()
+        }
+        panelScrim.setOnClickListener { closePanel() }
+        buildPanelRows()
+    }
+
+    private fun buildPanelRows() {
+        panelRows.removeAllViews()
+        val update = updateInfo
+        addPanelRow(R.drawable.ic_settings, getString(R.string.action_settings), getString(R.string.panel_settings_sub), null) {
+            closePanel(); start(Intent(Settings.ACTION_SETTINGS))
+        }
+        addPanelRow(R.drawable.ic_wifi, getString(R.string.action_wifi), getString(R.string.panel_wifi_sub), null) {
+            closePanel(); start(Intent(Settings.ACTION_WIFI_SETTINGS))
+        }
+        addPanelRow(
+            R.drawable.ic_update,
+            getString(R.string.action_update),
+            if (update != null) getString(R.string.panel_update_ready, update.versionName) else getString(R.string.panel_update_sub),
+            if (update != null) getString(R.string.badge_new) else null,
+        ) { closePanel(); onUpdateClicked() }
+        addPanelRow(R.drawable.ic_menu_dots, getString(R.string.panel_close), getString(R.string.panel_close_sub), null) { closePanel() }
+    }
+
+    private fun addPanelRow(iconRes: Int, title: String, sub: String, badge: String?, onClick: () -> Unit) {
+        val row = LayoutInflater.from(this).inflate(R.layout.panel_row, panelRows, false)
+        row.findViewById<ImageView>(R.id.row_icon).setImageResource(iconRes)
+        row.findViewById<TextView>(R.id.row_title).text = title
+        row.findViewById<TextView>(R.id.row_sub).text = sub
+        row.findViewById<TextView>(R.id.row_badge).apply {
+            visibility = if (badge != null) View.VISIBLE else View.GONE
+            text = badge
+        }
+        row.setOnClickListener { onClick() }
+        panelRows.addView(row)
+    }
+
+    private fun openPanel() {
+        if (panel.visibility == View.VISIBLE) return
+        focusBeforePanel = currentFocus
+        buildPanelRows()
+        panelScrim.visibility = View.VISIBLE
+        panelScrim.animate().alpha(1f).setDuration(220).start()
+        panel.visibility = View.VISIBLE
+        panel.translationX = panel.width.takeIf { it > 0 }?.toFloat() ?: 900f
+        panel.animate().translationX(0f).setDuration(260).start()
+        panelRows.getChildAt(0)?.requestFocus()
+    }
+
+    private fun closePanel() {
+        if (panel.visibility != View.VISIBLE) return
+        panelScrim.animate().alpha(0f).setDuration(200).withEndAction { panelScrim.visibility = View.GONE }.start()
+        panel.animate().translationX(panel.width.toFloat()).setDuration(220).withEndAction { panel.visibility = View.GONE }.start()
+        (focusBeforePanel ?: menuButton).requestFocus()
+        focusBeforePanel = null
     }
 
     private fun updateClock() {
@@ -150,9 +236,9 @@ class MainActivity : Activity() {
 
     private fun showWeather() {
         val w = weatherInfo ?: return
-        val box = findViewById<android.view.View>(R.id.weather)
-        box.visibility = android.view.View.VISIBLE
-        findViewById<android.widget.ImageView>(R.id.weather_icon).setImageResource(w.iconRes)
+        val box = findViewById<View>(R.id.weather)
+        box.visibility = View.VISIBLE
+        findViewById<ImageView>(R.id.weather_icon).setImageResource(w.iconRes)
         findViewById<TextView>(R.id.weather_temp).text = "${w.temp}°"
         findViewById<TextView>(R.id.weather_desc).text = getString(w.descriptionRes)
         findViewById<TextView>(R.id.weather_range).text =
@@ -206,16 +292,6 @@ class MainActivity : Activity() {
         if (recentApps.isNotEmpty()) {
             rows += Row.Section(getString(R.string.section_recent))
             recentApps.forEach { rows += Row.App(it, inFavorites = false, isFavorite = it.packageName in favSet, inRecent = true) }
-        }
-
-        rows += Row.Section(getString(R.string.section_shortcuts))
-        rows += Row.Action(ACTION_SETTINGS, getString(R.string.action_settings), R.drawable.ic_settings, null)
-        rows += Row.Action(ACTION_WIFI, getString(R.string.action_wifi), R.drawable.ic_wifi, null)
-        val update = updateInfo
-        rows += if (update != null) {
-            Row.Action(ACTION_UPDATE, getString(R.string.action_update_to, update.versionName), R.drawable.ic_update, getString(R.string.badge_new))
-        } else {
-            Row.Action(ACTION_UPDATE, getString(R.string.action_update), R.drawable.ic_update, null)
         }
 
         rows += Row.Section(getString(R.string.section_apps))
@@ -289,7 +365,10 @@ class MainActivity : Activity() {
                 result.onSuccess { info ->
                     val changed = info?.versionCode != updateInfo?.versionCode
                     updateInfo = info
-                    if (changed) render()
+                    if (changed) {
+                        render()
+                        menuButton.alpha = 1f
+                    }
                     when {
                         info != null && installIfFound -> startDownload(info)
                         info == null && !silent -> toast(getString(R.string.up_to_date, BuildConfig.VERSION_NAME))
