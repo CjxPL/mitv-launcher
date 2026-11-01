@@ -3,9 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:focusable="false"
-    android:paddingStart="8dp"
-    android:paddingTop="20dp"
-    android:paddingBottom="4dp"
+    android:fontFamily="sans-serif-medium"
+    android:paddingStart="10dp"
+    android:paddingTop="22dp"
+    android:paddingBottom="2dp"
     android:textColor="@color/text_muted"
-    android:textSize="17sp"
-    android:textStyle="bold" />
+    android:textSize="16sp" />

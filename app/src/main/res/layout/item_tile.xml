@@ -2,38 +2,45 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    android:background="@drawable/tile_bg"
     android:clickable="true"
+    android:clipChildren="false"
     android:focusable="true"
     android:longClickable="true"
     android:orientation="vertical"
-    android:padding="6dp">
+    android:paddingStart="@dimen/tile_gap"
+    android:paddingTop="14dp"
+    android:paddingEnd="@dimen/tile_gap"
+    android:paddingBottom="2dp">
 
     <FrameLayout
+        android:id="@+id/card"
         android:layout_width="match_parent"
-        android:layout_height="84dp">
+        android:layout_height="88dp"
+        android:background="@drawable/card_bg"
+        android:duplicateParentState="true"
+        android:foreground="@drawable/card_sheen">
 
         <ImageView
             android:id="@+id/image"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:importantForAccessibility="no"
-            android:scaleType="fitCenter" />
+            android:scaleType="centerCrop" />
 
         <TextView
             android:id="@+id/badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|end"
+            android:layout_margin="6dp"
             android:background="@drawable/badge_bg"
-            android:paddingStart="6dp"
+            android:fontFamily="sans-serif-medium"
+            android:paddingStart="7dp"
             android:paddingTop="2dp"
-            android:paddingEnd="6dp"
+            android:paddingEnd="7dp"
             android:paddingBottom="2dp"
             android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:textStyle="bold"
+            android:textSize="10sp"
             android:visibility="gone" />
 
         <ImageView
@@ -41,9 +48,10 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_gravity="top|end"
+            android:layout_margin="6dp"
             android:background="@drawable/star_bg"
             android:importantForAccessibility="no"
-            android:padding="3dp"
+            android:padding="4dp"
             android:src="@drawable/ic_star"
             android:visibility="gone" />
     </FrameLayout>
@@ -52,11 +60,13 @@
         android:id="@+id/label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="10dp"
+        android:alpha="0"
         android:ellipsize="marquee"
+        android:fontFamily="sans-serif-medium"
         android:gravity="center"
         android:marqueeRepeatLimit="marquee_forever"
         android:singleLine="true"
         android:textColor="@color/text"
-        android:textSize="13sp" />
+        android:textSize="14sp" />
 </LinearLayout>

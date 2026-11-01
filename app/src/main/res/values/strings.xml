@@ -24,4 +24,19 @@
     <string name="permission_title">Potrzebna jednorazowa zgoda</string>
     <string name="permission_message">Android musi pozwolić tej aplikacji instalować aktualizacje. Na następnym ekranie włącz zgodę dla MiTV Launcher.\n\nJeśli ten ekran się nie otworzy: Ustawienia → Preferencje urządzenia → Zabezpieczenia i ograniczenia → Nieznane źródła → MiTV Launcher.</string>
     <string name="permission_open">Otwórz ustawienia</string>
+    <string name="hero_welcome">MiTV</string>
+    <string name="greeting_morning">Dzień dobry</string>
+    <string name="greeting_day">Miłego dnia</string>
+    <string name="greeting_evening">Dobry wieczór</string>
+    <string name="hero_default_hint">Wybierz, co dziś oglądasz</string>
+    <string name="hero_favorite">Ulubione</string>
+    <string name="hero_app">Aplikacja</string>
+    <string name="hero_open_hint">OK – otwórz  ·  przytrzymaj OK – ulubione</string>
+    <string name="hero_shortcut">Skrót</string>
+    <string name="hero_settings">Ustawienia sticka</string>
+    <string name="hero_wifi">Sieć i połączenie z internetem</string>
+    <string name="hero_update">Sprawdź, czy jest nowa wersja launchera</string>
+    <string name="hero_update_new">Nowa wersja czeka na instalację</string>
+    <string name="footer">MiTV Launcher %1$s  ·  przytrzymaj OK na aplikacji, żeby dodać ją do ulubionych</string>
+    <string name="section_apps">Aplikacje</string>
 </resources>

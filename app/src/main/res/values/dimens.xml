@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="icon_padding">18dp</dimen>
-    <dimen name="action_icon_padding">22dp</dimen>
+    <dimen name="icon_padding">22dp</dimen>
+    <dimen name="action_icon_padding">26dp</dimen>
+    <dimen name="poster_icon_padding">40dp</dimen>
+    <dimen name="tile_gap">10dp</dimen>
+    <dimen name="tile_fallback_width">172dp</dimen>
+    <dimen name="side">56dp</dimen>
 </resources>

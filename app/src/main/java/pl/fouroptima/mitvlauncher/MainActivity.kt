@@ -59,11 +59,10 @@ class MainActivity : Activity() {
         grid = findViewById(R.id.grid)
         clock = findViewById(R.id.clock)
         date = findViewById(R.id.date)
-        findViewById<TextView>(R.id.version).text = getString(R.string.version, BuildConfig.VERSION_NAME)
 
         favorites = Favorites(this)
         updates = UpdateManager(this)
-        adapter = TileAdapter(::onTileClick, ::onTileLongClick)
+        adapter = TileAdapter(::onTileClick, ::onTileLongClick, ::onTileFocus, SPAN)
 
         grid.layoutManager = GridLayoutManager(this, SPAN).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -115,6 +114,7 @@ class MainActivity : Activity() {
         super.onNewIntent(intent)
         grid.scrollToPosition(0)
         focusIndex(adapter.firstTileIndex())
+        grid.post { grid.scrollToPosition(0) }
     }
 
     /** Wstecz na ekranie głównym nie zamyka launchera. */
@@ -127,12 +127,20 @@ class MainActivity : Activity() {
         val now = Date()
         clock.text = timeFormat.format(now)
         date.text = dateFormat.format(now).replaceFirstChar { it.titlecase(polish) }
+        adapter.refreshGreeting()
+    }
+
+    /** Wybrany kafelek trafia na scenę; w rzędzie Ulubione pokazujemy też całą scenę (przewinięcie na górę). */
+    private fun onTileFocus(row: Row) {
+        adapter.showInHero(row)
+        if (row is Row.App && row.inFavorites && grid.computeVerticalScrollOffset() > 0) grid.smoothScrollToPosition(0)
     }
 
     private fun loadApps() {
         io.execute {
             val list = AppRepository.load(this)
             main.post {
+                Artwork.clear() // nowe lub zaktualizowane aplikacje mogą mieć inne grafiki
                 apps = list
                 favorites.seedIfFirstRun(list.map { it.packageName }.toSet())
                 render()
@@ -156,6 +164,7 @@ class MainActivity : Activity() {
         val favApps = favPackages.mapNotNull { byPackage[it] }
 
         val rows = mutableListOf<Row>()
+        rows += Row.Hero
         rows += Row.Section(getString(R.string.section_favorites))
         if (favApps.isEmpty()) {
             rows += Row.Hint(getString(R.string.hint_favorites))
@@ -173,8 +182,9 @@ class MainActivity : Activity() {
             Row.Action(ACTION_UPDATE, getString(R.string.action_update), R.drawable.ic_update, null)
         }
 
-        rows += Row.Section(getString(R.string.section_all, apps.size))
+        rows += Row.Section(getString(R.string.section_apps))
         apps.forEach { rows += Row.App(it, inFavorites = false, isFavorite = it.packageName in favSet) }
+        rows += Row.Hint(getString(R.string.footer, BuildConfig.VERSION_NAME))
 
         adapter.submit(rows)
         if (focusedKey != null) {
@@ -185,8 +195,10 @@ class MainActivity : Activity() {
 
     private fun focusIndex(index: Int) {
         if (index < 0) return
+        // Ulubione leżą tuż pod sceną – wtedy pokazujemy ekran od samej góry
+        val top = (adapter.rows.getOrNull(index) as? Row.App)?.inFavorites == true
         grid.post {
-            grid.scrollToPosition(index)
+            grid.scrollToPosition(if (top) 0 else index)
             grid.post { grid.findViewHolderForAdapterPosition(index)?.itemView?.requestFocus() }
         }
     }
@@ -297,11 +309,11 @@ class MainActivity : Activity() {
 
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
 
-    private companion object {
-        const val SPAN = 5
+    companion object {
+        private const val SPAN = 5
         const val ACTION_SETTINGS = 1
         const val ACTION_WIFI = 2
         const val ACTION_UPDATE = 3
-        const val UPDATE_INTERVAL_MS = 30 * 60 * 1000L
+        private const val UPDATE_INTERVAL_MS = 30 * 60 * 1000L
     }
 }

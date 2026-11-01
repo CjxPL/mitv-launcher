@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="300dp"
+    android:layout_marginStart="-46dp"
+    android:layout_marginEnd="-46dp"
+    android:clipChildren="false"
+    android:focusable="false">
+
+    <ImageView
+        android:id="@+id/hero_bg_a"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="1"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:src="@drawable/hero_default" />
+
+    <ImageView
+        android:id="@+id/hero_bg_b"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:id="@+id/hero_scrim_left"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/scrim_left" />
+
+    <View
+        android:id="@+id/hero_scrim_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/scrim_bottom" />
+
+    <!-- Plakat aplikacji z prawej -->
+    <FrameLayout
+        android:id="@+id/hero_poster"
+        android:layout_width="380dp"
+        android:layout_height="214dp"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="@dimen/side"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/poster_bg"
+        android:elevation="20dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/hero_poster_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/poster_bg"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/hero_text"
+        android:layout_width="460dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|bottom"
+        android:layout_marginStart="@dimen/side"
+        android:layout_marginBottom="34dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/accent_dot" />
+
+            <TextView
+                android:id="@+id/hero_eyebrow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
+                android:textAllCaps="true"
+                android:textColor="@color/text_soft"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/hero_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="-0.02"
+            android:maxLines="2"
+            android:shadowColor="#80000000"
+            android:shadowRadius="10"
+            android:textColor="@color/text"
+            android:textSize="46sp" />
+
+        <TextView
+            android:id="@+id/hero_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/text_muted"
+            android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>
