@@ -30,7 +30,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginBottom="40dp"
+        android:layout_marginBottom="96dp"
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
@@ -43,7 +43,7 @@
             android:shadowColor="#80000000"
             android:shadowRadius="18"
             android:textColor="@color/text"
-            android:textSize="170sp" />
+            android:textSize="132sp" />
 
         <TextView
             android:id="@+id/date"
@@ -60,13 +60,13 @@
         <pl.fouroptima.mitvlauncher.RulerView
             android:layout_width="520dp"
             android:layout_height="12dp"
-            android:layout_marginTop="18dp" />
+            android:layout_marginTop="12dp" />
 
         <LinearLayout
             android:id="@+id/weather"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="26dp"
+            android:layout_marginTop="16dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:visibility="gone">
@@ -115,7 +115,7 @@
             android:id="@+id/forecast"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="18dp"
             android:orientation="horizontal" />
     </LinearLayout>
 
@@ -125,7 +125,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="108dp"
+        android:layout_marginBottom="16dp"
         android:alpha="0"
         android:letterSpacing="0.2"
         android:shadowColor="#80000000"
@@ -138,9 +138,9 @@
     <pl.fouroptima.mitvlauncher.DockView
         android:id="@+id/dock"
         android:layout_width="match_parent"
-        android:layout_height="88dp"
+        android:layout_height="84dp"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="22dp"
+        android:layout_marginBottom="36dp"
         android:clipChildren="false" />
 
     <!-- Wszystkie aplikacje (nakładka) -->
