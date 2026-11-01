@@ -41,8 +41,11 @@ class MainActivity : Activity() {
     private lateinit var rail: View
     private lateinit var railItems: ViewGroup
     private lateinit var railBottom: ViewGroup
-    private var railExpanded = false
-    private var railAnimator: android.animation.ValueAnimator? = null
+    private lateinit var backdrop: Backdrop
+    private lateinit var backdropA: ImageView
+    private lateinit var backdropB: ImageView
+    private var backdropFront: ImageView? = null
+    private var lastBackdropAt = 0L
     private var focusBeforePanel: View? = null
     private var weatherInfo: WeatherInfo? = null
 
@@ -78,6 +81,10 @@ class MainActivity : Activity() {
         favorites = Favorites(this)
         updates = UpdateManager(this)
         weather = Weather(this)
+        backdrop = Backdrop(this)
+        backdropA = findViewById(R.id.backdrop_a)
+        backdropB = findViewById(R.id.backdrop_b)
+        showBackdrop(backdrop.cached() ?: backdrop.bundled(), animate = false)
         setUpPanel()
         weatherInfo = weather.cached()
         showWeather()
@@ -118,6 +125,8 @@ class MainActivity : Activity() {
         // Ciche sprawdzenie nowej wersji co najwyżej raz na 30 minut
         if (System.currentTimeMillis() - lastUpdateCheck > UPDATE_INTERVAL_MS) checkForUpdates(silent = true)
         if (weatherInfo?.isStale != false) refreshWeather()
+        // Nowa losowa tapeta przy każdym powrocie, nie częściej niż co 20 minut
+        if (System.currentTimeMillis() - lastBackdropAt > BACKDROP_INTERVAL_MS) refreshBackdrop()
     }
 
     override fun onPause() {
@@ -172,10 +181,6 @@ class MainActivity : Activity() {
         rail = findViewById(R.id.rail)
         railItems = findViewById(R.id.rail_items)
         railBottom = findViewById(R.id.rail_bottom)
-        // Pasek rozwija się, gdy ma w sobie zaznaczenie, i zwija, gdy zaznaczenie wraca do siatki
-        window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { _, newFocus ->
-            setRailExpanded(newFocus != null && isInRail(newFocus))
-        }
     }
 
     private fun isInRail(v: View): Boolean {
@@ -188,25 +193,6 @@ class MainActivity : Activity() {
         return false
     }
 
-    private fun setRailExpanded(expanded: Boolean) {
-        if (railExpanded == expanded) return
-        railExpanded = expanded
-        val from = rail.width
-        val to = resources.getDimensionPixelSize(if (expanded) R.dimen.rail_expanded else R.dimen.rail_collapsed)
-        railAnimator?.cancel()
-        railAnimator = android.animation.ValueAnimator.ofInt(from, to).apply {
-            duration = 220
-            addUpdateListener { rail.layoutParams = rail.layoutParams.apply { width = it.animatedValue as Int }; rail.requestLayout() }
-            start()
-        }
-        val labelAlpha = if (expanded) 1f else 0f
-        for (group in listOf(railItems, railBottom)) {
-            for (i in 0 until group.childCount) {
-                group.getChildAt(i).findViewById<View>(R.id.rail_label)?.animate()?.alpha(labelAlpha)?.setDuration(180)?.start()
-            }
-        }
-    }
-
     private fun buildRail(favApps: List<AppEntry>) {
         val focusedPkg = (currentFocus?.takeIf { isInRail(it) }?.tag as? String)
         railItems.removeAllViews()
@@ -214,6 +200,7 @@ class MainActivity : Activity() {
         for (app in favApps) {
             val item = addRailItem(railItems, app.label, Artwork.accent(app)) {
                 it.setImageBitmap(Artwork.whiteIcon(app))
+                it.imageTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.ink))
             }
             item.tag = app.packageName
             val row = Row.App(app, inFavorites = true, isFavorite = true)
@@ -226,12 +213,13 @@ class MainActivity : Activity() {
         if (focusedPkg != null && favApps.none { it.packageName == focusedPkg }) {
             (railItems.getChildAt(0) ?: railBottom).post { (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus() }
         }
-        addRailItem(railBottom, getString(R.string.rail_apps), getColor(R.color.glass)) { it.setImageResource(R.drawable.ic_apps) }
+        addRailItem(railBottom, getString(R.string.rail_apps), getColor(R.color.ink)) { it.setImageResource(R.drawable.ic_apps) }
             .setOnClickListener {
                 val index = adapter.rows.indexOfFirst { it is Row.Section && it.title == getString(R.string.section_apps) }
                 focusIndex(if (index >= 0) index + 1 else adapter.firstTileIndex())
             }
         addRailItem(railBottom, getString(R.string.rail_more), getColor(R.color.accent)) { it.setImageResource(R.drawable.ic_dots_white) }
+        // Nowa tapeta w panelu – patrz buildPanelRows
             .setOnClickListener { openPanel() }
     }
 
@@ -239,16 +227,20 @@ class MainActivity : Activity() {
     private fun addRailItem(group: ViewGroup, label: String, accent: Int, icon: (ImageView) -> Unit): View {
         val item = LayoutInflater.from(this).inflate(R.layout.rail_item, group, false)
         icon(item.findViewById(R.id.rail_icon))
-        item.findViewById<TextView>(R.id.rail_label).apply {
-            text = label
-            alpha = if (railExpanded) 1f else 0f
-        }
-        item.backgroundTintList = android.content.res.ColorStateList(
+        val labelView = item.findViewById<TextView>(R.id.rail_label).apply { text = label }
+        val circle = item.findViewById<View>(R.id.rail_circle)
+        val iconView = item.findViewById<ImageView>(R.id.rail_icon)
+        circle.backgroundTintList = android.content.res.ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(accent, 0),
+            intArrayOf(accent, getColor(R.color.glass)),
         )
-        item.setOnFocusChangeListener { v, has ->
-            v.animate().scaleX(if (has) 1.04f else 1f).scaleY(if (has) 1.04f else 1f).setDuration(150).start()
+        item.setOnFocusChangeListener { _, has ->
+            circle.animate().scaleX(if (has) 1.12f else 1f).scaleY(if (has) 1.12f else 1f).setDuration(150).start()
+            labelView.animate().alpha(if (has) 1f else 0f).translationX(if (has) 0f else -8f).setDuration(160).start()
+            // Ciemna ikona na szkle, biała na kolorowym kółku
+            iconView.imageTintList = android.content.res.ColorStateList.valueOf(
+                if (has) android.graphics.Color.WHITE else getColor(R.color.ink),
+            )
         }
         group.addView(item)
         return item
@@ -269,6 +261,9 @@ class MainActivity : Activity() {
             if (update != null) getString(R.string.panel_update_ready, update.versionName) else getString(R.string.panel_update_sub),
             if (update != null) getString(R.string.badge_new) else null,
         ) { closePanel(); onUpdateClicked() }
+        addPanelRow(R.drawable.ic_history, getString(R.string.panel_backdrop), getString(R.string.panel_backdrop_sub), null) {
+            closePanel(); lastBackdropAt = 0L; refreshBackdrop()
+        }
         addPanelRow(R.drawable.ic_menu_dots, getString(R.string.panel_close), getString(R.string.panel_close_sub), null) { closePanel() }
     }
 
@@ -282,6 +277,14 @@ class MainActivity : Activity() {
             text = badge
         }
         row.setOnClickListener { onClick() }
+        val titleView = row.findViewById<TextView>(R.id.row_title)
+        val subView = row.findViewById<TextView>(R.id.row_sub)
+        val iconView = row.findViewById<ImageView>(R.id.row_icon)
+        row.setOnFocusChangeListener { _, has ->
+            titleView.setTextColor(getColor(if (has) android.R.color.white else R.color.text))
+            subView.setTextColor(if (has) 0xCCFFFFFF.toInt() else getColor(R.color.text_muted))
+            iconView.imageTintList = android.content.res.ColorStateList.valueOf(if (has) android.graphics.Color.WHITE else getColor(R.color.ink))
+        }
         panelRows.addView(row)
     }
 
@@ -326,6 +329,31 @@ class MainActivity : Activity() {
         today.add(java.util.Calendar.DAY_OF_YEAR, -1)
         if (sameDay(day, today)) return getString(R.string.opened_yesterday, time)
         return getString(R.string.opened_on, dateFormat.format(Date(at)).lowercase(polish))
+    }
+
+    private fun refreshBackdrop() {
+        lastBackdropAt = System.currentTimeMillis()
+        io.execute {
+            val bmp = runCatching { backdrop.fetchRandom() }.getOrNull() ?: return@execute
+            main.post { showBackdrop(bmp, animate = true) }
+        }
+    }
+
+    private fun showBackdrop(bitmap: android.graphics.Bitmap?, animate: Boolean) {
+        if (bitmap == null) return
+        val front = backdropFront
+        val back = if (front === backdropA) backdropB else backdropA
+        back.setImageBitmap(bitmap)
+        if (animate && front != null) {
+            back.alpha = 0f
+            back.animate().alpha(1f).setDuration(900).start()
+            front.animate().alpha(0f).setDuration(900).withEndAction { front.setImageDrawable(null) }.start()
+        } else {
+            back.alpha = 1f
+            front?.alpha = 0f
+            front?.setImageDrawable(null)
+        }
+        backdropFront = back
     }
 
     private fun refreshWeather() {
@@ -534,5 +562,6 @@ class MainActivity : Activity() {
         const val ACTION_WIFI = 2
         const val ACTION_UPDATE = 3
         private const val UPDATE_INTERVAL_MS = 30 * 60 * 1000L
+        private const val BACKDROP_INTERVAL_MS = 20 * 60 * 1000L
     }
 }

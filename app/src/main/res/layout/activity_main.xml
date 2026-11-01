@@ -4,126 +4,81 @@
     android:layout_height="match_parent"
     android:background="@color/bg">
 
+    <!-- Tapeta: dwie warstwy do płynnego przenikania -->
+    <ImageView
+        android:id="@+id/backdrop_a"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <ImageView
+        android:id="@+id/backdrop_b"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <!-- Lekka mgiełka, żeby ciemny tekst był czytelny na każdym zdjęciu -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/haze" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/grid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:paddingStart="112dp"
+        android:paddingStart="124dp"
+        android:paddingTop="96dp"
         android:paddingEnd="46dp"
         android:paddingBottom="48dp" />
 
-    <!-- Pasek ulubionych po lewej (jak w YouTube): same ikony, rozwija się po zaznaczeniu -->
+    <!-- Górny pasek-pigułka: pogoda z lewej, zegar z prawej -->
     <LinearLayout
-        android:id="@+id/rail"
-        android:layout_width="80dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="@drawable/rail_bg"
-        android:clipChildren="false"
-        android:elevation="8dp"
-        android:orientation="vertical"
-        android:paddingStart="12dp"
-        android:paddingTop="24dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="24dp">
-
-        <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="14dp"
-            android:layout_marginBottom="18dp"
-            android:importantForAccessibility="no"
-            android:src="@drawable/ic_launcher" />
-
-        <LinearLayout
-            android:id="@+id/rail_items"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="vertical" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginStart="14dp"
-            android:layout_marginEnd="14dp"
-            android:layout_marginBottom="8dp"
-            android:background="#33FFFFFF" />
-
-        <LinearLayout
-            android:id="@+id/rail_bottom"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </LinearLayout>
-
-    <!-- Przyciemnienie u góry, żeby zegar był czytelny nad przewijaną treścią -->
-    <View
+        android:id="@+id/topbar"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:background="@drawable/scrim_top" />
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="@dimen/side"
-        android:gravity="end"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/clock"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-light"
-            android:shadowColor="#99000000"
-            android:shadowRadius="8"
-            android:textColor="@color/text"
-            android:textSize="30sp" />
-
-        <TextView
-            android:id="@+id/date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:shadowColor="#99000000"
-            android:shadowRadius="6"
-            android:textColor="@color/text_soft"
-            android:textSize="13sp" />
+        android:layout_height="64dp"
+        android:layout_marginStart="124dp"
+        android:layout_marginTop="22dp"
+        android:layout_marginEnd="46dp"
+        android:background="@drawable/glass_pill"
+        android:elevation="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="26dp"
+        android:paddingEnd="26dp">
 
         <LinearLayout
             android:id="@+id/weather"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:visibility="gone">
 
             <ImageView
                 android:id="@+id/weather_icon"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:importantForAccessibility="no" />
 
             <TextView
                 android:id="@+id/weather_temp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:fontFamily="sans-serif-light"
-                android:shadowColor="#99000000"
-                android:shadowRadius="8"
                 android:textColor="@color/text"
-                android:textSize="26sp" />
+                android:textSize="24sp" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="12dp"
                 android:orientation="vertical">
 
                 <TextView
@@ -131,8 +86,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:shadowColor="#99000000"
-                    android:shadowRadius="6"
                     android:textColor="@color/text"
                     android:textSize="13sp" />
 
@@ -140,24 +93,82 @@
                     android:id="@+id/weather_range"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:shadowColor="#99000000"
-                    android:shadowRadius="6"
-                    android:textColor="@color/text_soft"
-                    android:textSize="12sp" />
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/text_muted"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:textColor="@color/text"
+            android:textSize="28sp" />
     </LinearLayout>
 
-    <!-- Przyciemnienie pod panelem -->
+    <!-- Lewy pasek: okrągłe szklane przyciski ulubionych -->
+    <LinearLayout
+        android:id="@+id/rail"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@drawable/rail_bg"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:elevation="10dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingStart="34dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:id="@+id/rail_items"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical" />
+
+        <View
+            android:layout_width="30dp"
+            android:layout_height="1dp"
+            android:layout_marginStart="13dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="14dp"
+            android:background="#55000000" />
+
+        <LinearLayout
+            android:id="@+id/rail_bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical" />
+    </LinearLayout>
+
     <View
         android:id="@+id/panel_scrim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:alpha="0"
-        android:background="#99000000"
+        android:background="#55000000"
         android:visibility="gone" />
 
-    <!-- Panel wysuwany z prawej -->
     <LinearLayout
         android:id="@+id/side_panel"
         android:layout_width="360dp"

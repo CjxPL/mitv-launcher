@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Paleta 4optima (akcent) na ciemnym, spokojnym tle w stylu Apple TV -->
+    <!-- Jasny motyw „szkło na zdjęciu”; pomarańcz 4optima tylko jako drobny akcent -->
     <color name="accent">#FE5B00</color>
     <color name="navy">#1E293B</color>
     <color name="neutral">#64748B</color>
-    <color name="bg">#0A0E16</color>
-    <color name="bg_transparent">#000A0E16</color>
-    <color name="card">#1C2433</color>
-    <color name="glass">#2A3346</color>
-    <color name="text">#F5F7FA</color>
-    <color name="text_muted">#9AA4B5</color>
-    <color name="text_soft">#C9D1DD</color>
+    <color name="bg">#DCD6CF</color>
+    <color name="ink">#1B1F2A</color>
+    <color name="glass">#B8FFFFFF</color>
+    <color name="glass_strong">#E8FFFFFF</color>
+    <color name="glass_line">#66FFFFFF</color>
+    <color name="text">#1B1F2A</color>
+    <color name="text_muted">#5B6472</color>
+    <color name="text_soft">#3A4250</color>
+    <color name="card">#B8FFFFFF</color>
+    <color name="tile">#B8FFFFFF</color>
 </resources>

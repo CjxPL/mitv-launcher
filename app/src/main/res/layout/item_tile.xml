@@ -61,7 +61,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:alpha="0"
+        android:alpha="1"
         android:ellipsize="marquee"
         android:fontFamily="sans-serif-medium"
         android:gravity="center"

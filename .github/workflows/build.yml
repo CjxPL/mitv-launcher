@@ -35,6 +35,23 @@ jobs:
             echo "::warning::Brak sekretu LAUNCHER_SIGNING_KEY – APK podpisany kluczem testowym, wydanie nie zostanie opublikowane."
           fi
 
+      # Zdjęcia tła z Unsplash (lista w photos.txt). Brak zdjęcia nie psuje budowania – pokaże się gradient.
+      - name: Zdjęcia
+        run: |
+          mkdir -p app/src/main/assets/photos
+          grep -v '^#' photos.txt | while read -r name id; do
+            [ -z "$name" ] && continue
+            out="app/src/main/assets/photos/${name}.jpg"
+            if curl -fsSL --retry 3 --max-time 60 -A "MiTVLauncher-build" \
+                 "https://images.unsplash.com/${id}?fm=jpg&q=70&w=1280&fit=max" -o "$out" && [ -s "$out" ]; then
+              echo "ok  $name ($(stat -c %s "$out") B)"
+            else
+              rm -f "$out"
+              echo "::warning::Nie pobrano zdjęcia ${name} (${id})"
+            fi
+          done
+          ls -la app/src/main/assets/photos
+
       - name: Budowanie
         env:
           LAUNCHER_VERSION_CODE: ${{ github.run_number }}

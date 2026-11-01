@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Launcher" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+    <style name="Theme.Launcher" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar.Fullscreen">
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:colorAccent">@color/accent</item>
         <item name="android:windowShowWallpaper">false</item>

@@ -69,4 +69,8 @@
     <string name="rail_apps">Wszystkie aplikacje</string>
     <string name="rail_more">Skróty</string>
     <string name="hint_rail">Ulubione są na pasku po lewej. Przytrzymaj OK na aplikacji, żeby dodać ją do paska.</string>
+    <string name="hero_card_open">OK – otwórz</string>
+    <string name="backdrop_failed">Nie udało się pobrać nowej tapety.</string>
+    <string name="panel_backdrop">Nowa tapeta</string>
+    <string name="panel_backdrop_sub">Losowe zdjęcie w tle</string>
 </resources>

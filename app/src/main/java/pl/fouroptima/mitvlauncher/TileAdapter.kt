@@ -102,12 +102,7 @@ class TileAdapter(
             TYPE_HERO -> {
                 val view = inflater.inflate(R.layout.item_hero, parent, false)
                 val h = parent.height.takeIf { it > 0 } ?: parent.resources.displayMetrics.heightPixels
-                val heroH = (h * 0.56f).toInt()
-                view.layoutParams.height = heroH
-                view.findViewById<View>(R.id.hero_poster).layoutParams.apply {
-                    height = (heroH * 0.5f).toInt()
-                    width = height * 16 / 9
-                }
+                view.layoutParams.height = (h * 0.5f).toInt()
                 HeroHolder(view).also { hero = it }
             }
             TYPE_SECTION -> TextHolder(inflater.inflate(R.layout.item_section, parent, false))
@@ -139,20 +134,19 @@ class TileAdapter(
         val text: TextView = view as TextView
     }
 
-    /** Scena: rozmyte tło z obrazu aplikacji, duża nazwa z lewej, plakat z prawej. */
+    /** Scena: duży nagłówek z lewej, szklana karta aplikacji z prawej. */
     inner class HeroHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val bgA: ImageView = view.findViewById(R.id.hero_bg_a)
-        private val bgB: ImageView = view.findViewById(R.id.hero_bg_b)
         private val poster: View = view.findViewById(R.id.hero_poster)
         private val posterImage: ImageView = view.findViewById(R.id.hero_poster_image)
+        private val cardTitle: TextView = view.findViewById(R.id.hero_card_title)
+        private val cardSub: TextView = view.findViewById(R.id.hero_card_sub)
         private val text: View = view.findViewById(R.id.hero_text)
         private val eyebrow: TextView = view.findViewById(R.id.hero_eyebrow)
         private val title: TextView = view.findViewById(R.id.hero_title)
         private val subtitle: TextView = view.findViewById(R.id.hero_subtitle)
-        private var front = bgA
 
         init {
-            poster.clipToOutline = true
+            posterImage.clipToOutline = true
         }
 
         fun show(row: Row?, animate: Boolean) {
@@ -169,8 +163,9 @@ class TileAdapter(
                     )
                     title.text = app.label
                     subtitle.text = openedText?.invoke(app.packageName) ?: res.getString(R.string.hero_open_hint)
-                    swapBackground(Artwork.blurred(app), animate)
                     poster.visibility = View.VISIBLE
+                    cardTitle.text = app.label
+                    cardSub.text = res.getString(R.string.hero_card_open)
                     if (app.banner != null) {
                         posterImage.setPadding(0, 0, 0, 0)
                         posterImage.setImageDrawable(app.banner)
@@ -185,12 +180,7 @@ class TileAdapter(
                 row is Row.Action -> {
                     eyebrow.text = res.getString(R.string.hero_shortcut)
                     title.text = row.label
-                    subtitle.text = when (row.id) {
-                        MainActivity.ACTION_UPDATE -> res.getString(if (row.badge != null) R.string.hero_update_new else R.string.hero_update)
-                        MainActivity.ACTION_WIFI -> res.getString(R.string.hero_wifi)
-                        else -> res.getString(R.string.hero_settings)
-                    }
-                    swapBackground(null, animate)
+                    subtitle.text = ""
                     poster.visibility = View.GONE
                 }
                 else -> {
@@ -210,45 +200,20 @@ class TileAdapter(
                     } else {
                         res.getString(R.string.hero_default_hint)
                     }
-                    swapBackground(null, animate, timeOfDayBackground(hour))
                     poster.visibility = View.GONE
                 }
             }
             if (animate) {
                 text.alpha = 0f
-                text.translationX = -24f
-                text.animate().alpha(1f).translationX(0f).setDuration(260).start()
+                text.translationY = 16f
+                text.animate().alpha(1f).translationY(0f).setDuration(260).start()
                 if (poster.visibility == View.VISIBLE) {
                     poster.alpha = 0f
-                    poster.scaleX = 0.96f
-                    poster.scaleY = 0.96f
+                    poster.scaleX = 0.97f
+                    poster.scaleY = 0.97f
                     poster.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(300).start()
                 }
             }
-        }
-
-        private fun timeOfDayBackground(hour: Int) = when (hour) {
-            in 5..8 -> R.drawable.hero_morning
-            in 9..16 -> R.drawable.hero_day
-            in 17..20 -> R.drawable.hero_evening
-            else -> R.drawable.hero_night
-        }
-
-        /** Przenikanie dwóch warstw tła. */
-        private fun swapBackground(bitmap: android.graphics.Bitmap?, animate: Boolean, fallbackRes: Int = R.drawable.hero_default) {
-            val back = if (front === bgA) bgB else bgA
-            if (bitmap != null) back.setImageBitmap(bitmap) else back.setImageResource(fallbackRes)
-            if (animate) {
-                back.alpha = 0f
-                back.animate().alpha(1f).setDuration(380).start()
-                front.animate().alpha(0f).setDuration(380).start()
-            } else {
-                back.animate().cancel()
-                front.animate().cancel()
-                back.alpha = 1f
-                front.alpha = 0f
-            }
-            front = back
         }
     }
 
@@ -264,10 +229,9 @@ class TileAdapter(
             view.setOnClickListener { rowAt()?.let(onClick) }
             view.setOnLongClickListener { rowAt()?.let(onLongClick) ?: false }
             view.setOnFocusChangeListener { v, hasFocus ->
-                val scale = if (hasFocus) 1.12f else 1f
+                val scale = if (hasFocus) 1.08f else 1f
                 v.animate().scaleX(scale).scaleY(scale).setDuration(180).start()
-                card.animate().translationZ(if (hasFocus) 24f else 0f).setDuration(180).start()
-                label.animate().alpha(if (hasFocus) 1f else 0f).setDuration(180).start()
+                card.animate().translationZ(if (hasFocus) 16f else 0f).setDuration(180).start()
                 label.isSelected = hasFocus // przewijanie długiej nazwy
                 if (hasFocus) rowAt()?.let(onFocus)
             }
@@ -301,7 +265,7 @@ class TileAdapter(
             image.setPadding(pad, pad, pad, pad)
             image.scaleType = ImageView.ScaleType.FIT_CENTER
             image.setImageResource(row.iconRes)
-            card.backgroundTintList = ColorStateList.valueOf(itemView.context.getColor(R.color.glass))
+            card.backgroundTintList = null
             label.text = row.label
             badge.visibility = if (row.badge != null) View.VISIBLE else View.GONE
             badge.text = row.badge
@@ -311,10 +275,9 @@ class TileAdapter(
         /** Ponownie użyty kafelek nie może zostać powiększony po poprzedniej aplikacji. */
         private fun resetFocusState() {
             val focused = itemView.isFocused
-            itemView.scaleX = if (focused) 1.12f else 1f
+            itemView.scaleX = if (focused) 1.08f else 1f
             itemView.scaleY = itemView.scaleX
-            card.translationZ = if (focused) 24f else 0f
-            label.alpha = if (focused) 1f else 0f
+            card.translationZ = if (focused) 16f else 0f
         }
     }
 
