@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.AttributeSet
 import android.view.KeyEvent
-import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import kotlin.math.abs
@@ -155,6 +154,4 @@ class DockView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
         super.onLayout(changed, left, top, right, bottom)
         if (changed) layoutItems(animate = false)
     }
-
-    override fun generateLayoutParams(attrs: AttributeSet?): ViewGroup.LayoutParams = LayoutParams(context, attrs)
 }
