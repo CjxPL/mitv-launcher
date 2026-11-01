@@ -73,4 +73,21 @@
     <string name="backdrop_failed">Nie udało się pobrać nowej tapety.</string>
     <string name="panel_backdrop">Nowa tapeta</string>
     <string name="panel_backdrop_sub">Losowe zdjęcie w tle</string>
+    <string name="top_apps">Aplikacje</string>
+    <string name="field_weather">Pogoda</string>
+    <string name="field_place">Miejsce</string>
+    <string name="field_time">Godzina</string>
+    <string name="card_recent_eyebrow">Ostatnio</string>
+    <string name="card_recent_title">Ostatnio otwierane</string>
+    <string name="card_recent_empty">Jeszcze nic nie otwierałeś z tego ekranu.</string>
+    <string name="card_recent_cta">Zobacz wszystkie</string>
+    <string name="card_open">Otwórz</string>
+    <string name="card_desc_fav">Aplikacja z Twojego paska ulubionych. Przytrzymaj OK, żeby ją z niego zdjąć.</string>
+    <string name="card_desc_app">Przytrzymaj OK, żeby dodać ją do paska ulubionych po lewej.</string>
+    <string name="stat_fav_yes">Ulubiona</string>
+    <string name="stat_fav_no">Na liście</string>
+    <string name="stat_never">Nie otwierano</string>
+    <string name="stat_tv">Aplikacja TV</string>
+    <string name="stat_phone">Z telefonu</string>
+    <string name="hero_welcome_title">Dobry wieczór</string>
 </resources>

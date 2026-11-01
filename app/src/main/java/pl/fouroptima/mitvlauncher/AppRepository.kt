@@ -12,6 +12,8 @@ data class AppEntry(
     /** Poziomy obrazek 16:9, który aplikacje telewizyjne mają specjalnie na ekran główny. */
     val banner: Drawable?,
     val icon: Drawable?,
+    /** true = ma wersję na telewizor (Leanback), false = aplikacja z telefonu */
+    val isTv: Boolean,
 )
 
 object AppRepository {
@@ -26,13 +28,14 @@ object AppRepository {
             Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0,
         )
         val result = LinkedHashMap<String, AppEntry>()
+        val tvPackages = leanback.map { it.activityInfo.packageName }.toSet()
         for (ri in leanback + phone) {
             val pkg = ri.activityInfo.packageName
             if (pkg == context.packageName || result.containsKey(pkg)) continue
             val label = ri.loadLabel(pm).toString().trim().ifEmpty { pkg }
             val banner = runCatching { ri.activityInfo.loadBanner(pm) }.getOrNull()
             val icon = runCatching { ri.loadIcon(pm) }.getOrNull()
-            result[pkg] = AppEntry(pkg, label, banner, icon)
+            result[pkg] = AppEntry(pkg, label, banner, icon, isTv = pkg in tvPackages)
         }
         val collator = Collator.getInstance(Locale("pl", "PL"))
         return result.values.sortedWith { a, b -> collator.compare(a.label, b.label) }

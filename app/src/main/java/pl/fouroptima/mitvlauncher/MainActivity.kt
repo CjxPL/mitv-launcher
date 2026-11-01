@@ -75,8 +75,11 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
 
         grid = findViewById(R.id.grid)
-        clock = findViewById(R.id.clock)
-        date = findViewById(R.id.date)
+        val timeField = findViewById<View>(R.id.field_time)
+        clock = timeField.findViewById(R.id.field_value)
+        date = timeField.findViewById(R.id.field_label)
+        timeField.findViewById<ImageView>(R.id.field_icon).setImageResource(R.drawable.ic_clock_line)
+        setUpTopBar()
 
         favorites = Favorites(this)
         updates = UpdateManager(this)
@@ -99,6 +102,7 @@ class MainActivity : Activity() {
         grid.itemAnimator = null
         adapter.weather = weatherInfo
         adapter.openedText = ::openedText
+        adapter.openedShort = ::openedShort
 
         val packages = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
@@ -226,21 +230,13 @@ class MainActivity : Activity() {
     /** Element paska: biała ikona, nazwa widoczna po rozwinięciu, po zaznaczeniu tło w kolorze aplikacji. */
     private fun addRailItem(group: ViewGroup, label: String, accent: Int, icon: (ImageView) -> Unit): View {
         val item = LayoutInflater.from(this).inflate(R.layout.rail_item, group, false)
-        icon(item.findViewById(R.id.rail_icon))
-        val labelView = item.findViewById<TextView>(R.id.rail_label).apply { text = label }
-        val circle = item.findViewById<View>(R.id.rail_circle)
         val iconView = item.findViewById<ImageView>(R.id.rail_icon)
-        circle.backgroundTintList = android.content.res.ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(accent, getColor(R.color.glass)),
-        )
-        item.setOnFocusChangeListener { _, has ->
-            circle.animate().scaleX(if (has) 1.12f else 1f).scaleY(if (has) 1.12f else 1f).setDuration(150).start()
-            labelView.animate().alpha(if (has) 1f else 0f).translationX(if (has) 0f else -8f).setDuration(160).start()
-            // Ciemna ikona na szkle, biała na kolorowym kółku
-            iconView.imageTintList = android.content.res.ColorStateList.valueOf(
-                if (has) android.graphics.Color.WHITE else getColor(R.color.ink),
-            )
+        icon(iconView)
+        item.contentDescription = label
+        item.setOnFocusChangeListener { v, has ->
+            v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).setDuration(150).start()
+            // Na białym kółku ikona w kolorze marki aplikacji, na szkle ciemna
+            iconView.imageTintList = android.content.res.ColorStateList.valueOf(if (has) accent else getColor(R.color.ink))
         }
         group.addView(item)
         return item
@@ -367,16 +363,69 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun setUpTopBar() {
+        val weatherField = findViewById<View>(R.id.field_weather)
+        weatherField.findViewById<TextView>(R.id.field_label).text = getString(R.string.field_weather)
+        weatherField.findViewById<TextView>(R.id.field_value).text = "—"
+        weatherField.findViewById<ImageView>(R.id.field_icon).setImageResource(R.drawable.ic_w_cloud)
+        val placeField = findViewById<View>(R.id.field_place)
+        placeField.findViewById<TextView>(R.id.field_label).text = getString(R.string.field_place)
+        placeField.findViewById<TextView>(R.id.field_value).text = "—"
+        placeField.findViewById<ImageView>(R.id.field_icon).setImageResource(R.drawable.ic_tv_line)
+        for (id in listOf(R.id.top_apps, R.id.top_more)) {
+            val pill = findViewById<View>(id)
+            pill.isFocusable = true
+            pill.setOnFocusChangeListener { v, has ->
+                v.animate().scaleX(if (has) 1.05f else 1f).scaleY(if (has) 1.05f else 1f).setDuration(150).start()
+                v.backgroundTintList = android.content.res.ColorStateList.valueOf(if (has) getColor(R.color.ink) else 0xF2FFFFFF.toInt())
+                (v as ViewGroup).forEachTextAndImage { tv, iv ->
+                    tv?.setTextColor(getColor(if (has) android.R.color.white else R.color.text))
+                    iv?.imageTintList = if (has) android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE) else null
+                }
+            }
+        }
+        findViewById<View>(R.id.top_apps).setOnClickListener {
+            val index = adapter.rows.indexOfFirst { it is Row.Section && it.title == getString(R.string.section_apps) }
+            focusIndex(if (index >= 0) index + 1 else adapter.firstTileIndex())
+        }
+        findViewById<View>(R.id.top_more).setOnClickListener { openPanel() }
+    }
+
+    private fun ViewGroup.forEachTextAndImage(f: (TextView?, ImageView?) -> Unit) {
+        for (i in 0 until childCount) {
+            when (val c = getChildAt(i)) {
+                is TextView -> f(c, null)
+                is ImageView -> f(null, c)
+                is ViewGroup -> c.forEachTextAndImage(f)
+            }
+        }
+    }
+
     private fun showWeather() {
         val w = weatherInfo ?: return
-        val box = findViewById<View>(R.id.weather)
-        box.visibility = View.VISIBLE
-        findViewById<ImageView>(R.id.weather_icon).setImageResource(w.iconRes)
-        findViewById<TextView>(R.id.weather_temp).text = "${w.temp}°"
-        findViewById<TextView>(R.id.weather_desc).text = getString(w.descriptionRes)
-        findViewById<TextView>(R.id.weather_range).text =
-            if (w.city.isNotBlank()) getString(R.string.weather_range, w.max, w.min, w.city)
-            else getString(R.string.weather_range_nocity, w.max, w.min)
+        val weatherField = findViewById<View>(R.id.field_weather)
+        weatherField.findViewById<ImageView>(R.id.field_icon).setImageResource(w.iconRes)
+        weatherField.findViewById<TextView>(R.id.field_value).text = "${w.temp}°, ${getString(w.descriptionRes)}"
+        weatherField.findViewById<TextView>(R.id.field_label).text =
+            getString(R.string.weather_range_nocity, w.max, w.min)
+        val placeField = findViewById<View>(R.id.field_place)
+        placeField.findViewById<TextView>(R.id.field_value).text = w.city.ifBlank { "—" }
+    }
+
+    /** Krótko: „dziś 10:32”, „wczoraj 21:05”, „środa”. */
+    private fun openedShort(pkg: String): String? {
+        val at = favorites.openedAt(pkg)
+        if (at == 0L) return null
+        val day = java.util.Calendar.getInstance().apply { timeInMillis = at }
+        val today = java.util.Calendar.getInstance()
+        val same = day.get(java.util.Calendar.YEAR) == today.get(java.util.Calendar.YEAR) &&
+            day.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR)
+        if (same) return "dziś " + timeFormat.format(Date(at))
+        today.add(java.util.Calendar.DAY_OF_YEAR, -1)
+        val yesterday = day.get(java.util.Calendar.YEAR) == today.get(java.util.Calendar.YEAR) &&
+            day.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR)
+        if (yesterday) return "wczoraj " + timeFormat.format(Date(at))
+        return SimpleDateFormat("EEEE", polish).format(Date(at))
     }
 
     /** Wybrany kafelek trafia na scenę; w rzędzie Ulubione pokazujemy też całą scenę (przewinięcie na górę). */
@@ -417,11 +466,7 @@ class MainActivity : Activity() {
         buildRail(favApps)
         if (favApps.isEmpty()) rows += Row.Hint(getString(R.string.hint_rail))
 
-        val recentApps = favorites.recent().mapNotNull { byPackage[it] }
-        if (recentApps.isNotEmpty()) {
-            rows += Row.Section(getString(R.string.section_recent))
-            recentApps.forEach { rows += Row.App(it, inFavorites = false, isFavorite = it.packageName in favSet, inRecent = true) }
-        }
+        adapter.recentApps = favorites.recent().mapNotNull { byPackage[it] }.map { it to (openedShort(it.packageName) ?: "") }
 
         rows += Row.Section(getString(R.string.section_apps))
         apps.forEach { rows += Row.App(it, inFavorites = false, isFavorite = it.packageName in favSet) }
