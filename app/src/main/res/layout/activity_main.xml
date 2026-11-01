@@ -139,20 +139,20 @@
         <!-- Lewy pasek: okrągłe szklane przyciski -->
         <LinearLayout
             android:id="@+id/rail"
-            android:layout_width="wrap_content"
+            android:layout_width="60dp"
             android:layout_height="match_parent"
             android:layout_gravity="start|top"
             android:layout_marginStart="22dp"
             android:layout_marginTop="92dp"
-            android:layout_marginBottom="150dp"
+            android:layout_marginBottom="92dp"
             android:background="@drawable/railpill_bg"
             android:elevation="10dp"
-            android:gravity="center_horizontal|top"
+            android:gravity="center_horizontal|bottom"
             android:orientation="vertical"
             android:paddingStart="7dp"
             android:paddingTop="10dp"
             android:paddingEnd="7dp"
-            android:paddingBottom="10dp">
+            android:paddingBottom="4dp">
 
             <LinearLayout
                 android:id="@+id/rail_items"
@@ -173,6 +173,16 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
         </LinearLayout>
+
+        <View
+            android:id="@+id/rail_foot"
+            android:layout_width="118dp"
+            android:layout_height="52dp"
+            android:layout_gravity="start|bottom"
+            android:layout_marginStart="22dp"
+            android:layout_marginBottom="40dp"
+            android:background="@drawable/railfoot_bg"
+            android:elevation="10dp" />
 
         <View
             android:id="@+id/panel_scrim"
