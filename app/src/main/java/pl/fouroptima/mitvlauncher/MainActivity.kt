@@ -212,10 +212,7 @@ class MainActivity : Activity() {
         railItems.removeAllViews()
         railBottom.removeAllViews()
         for (app in favApps.take(MAX_RAIL)) {
-            val item = addRailItem(railItems, app.label, Artwork.accent(app)) {
-                it.setImageBitmap(Artwork.whiteIcon(app))
-                it.imageTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.ink))
-            }
+            val item = addRailItem(railItems, app.label, Artwork.accent(app)) { }
             item.tag = app.packageName
             val row = Row.App(app, inFavorites = true, isFavorite = true)
             item.setOnClickListener { onTileClick(row) }
@@ -227,26 +224,25 @@ class MainActivity : Activity() {
         if (focusedPkg != null && favApps.none { it.packageName == focusedPkg }) {
             (railItems.getChildAt(0) ?: railBottom).post { (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus() }
         }
-        addRailItem(railBottom, getString(R.string.rail_apps), getColor(R.color.ink)) { it.setImageResource(R.drawable.ic_apps) }
+        addRailItem(railBottom, getString(R.string.rail_apps), getColor(R.color.text_soft)) { }
             .setOnClickListener {
                 val index = adapter.rows.indexOfFirst { it is Row.Section && it.title == getString(R.string.section_apps) }
                 focusIndex(if (index >= 0) index + 1 else adapter.firstTileIndex())
             }
-        addRailItem(railBottom, getString(R.string.rail_more), getColor(R.color.accent)) { it.setImageResource(R.drawable.ic_dots_white) }
+        addRailItem(railBottom, getString(R.string.rail_more), getColor(R.color.text_soft)) { }
         // Nowa tapeta w panelu – patrz buildPanelRows
             .setOnClickListener { openPanel() }
     }
 
-    /** Element paska: biała ikona, nazwa widoczna po rozwinięciu, po zaznaczeniu tło w kolorze aplikacji. */
+    /** Element paska: sama nazwa w kolorze aplikacji; zaznaczona dostaje białą pigułkę. */
     private fun addRailItem(group: ViewGroup, label: String, accent: Int, icon: (ImageView) -> Unit): View {
-        val item = LayoutInflater.from(this).inflate(R.layout.rail_item, group, false)
-        val iconView = item.findViewById<ImageView>(R.id.rail_icon)
-        icon(iconView)
-        item.contentDescription = label
+        val item = LayoutInflater.from(this).inflate(R.layout.rail_item, group, false) as TextView
+        item.text = label
+        item.setTextColor(accent)
+        item.setShadowLayer(6f, 0f, 1f, 0x66FFFFFF)
         item.setOnFocusChangeListener { v, has ->
-            v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).setDuration(150).start()
-            // Na białym kółku ikona w kolorze marki aplikacji, na szkle ciemna
-            iconView.imageTintList = android.content.res.ColorStateList.valueOf(if (has) accent else getColor(R.color.ink))
+            v.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(150).start()
+            (v as TextView).setShadowLayer(if (has) 0f else 6f, 0f, 1f, 0x66FFFFFF)
         }
         group.addView(item)
         return item

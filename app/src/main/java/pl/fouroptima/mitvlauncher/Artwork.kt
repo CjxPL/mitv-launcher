@@ -111,8 +111,8 @@ object Artwork {
         val c = Color.rgb((r / n).toInt(), (g / n).toInt(), (b / n).toInt())
         // Zbyt jasny kolor przyciemniamy, żeby biały napis był czytelny
         Color.colorToHSV(c, hsv)
-        if (hsv[2] > 0.85f) hsv[2] = 0.85f
-        if (hsv[1] < 0.6f) hsv[1] = 0.6f
+        if (hsv[2] > 0.8f) hsv[2] = 0.8f
+        if (hsv[1] < 0.7f) hsv[1] = 0.7f
         Color.HSVToColor(hsv)
     }
 
