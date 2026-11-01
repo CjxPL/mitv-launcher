@@ -7,6 +7,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.roundToInt
 
+data class DayForecast(val epochDay: Long, val code: Int, val max: Int, val min: Int) {
+    val iconRes: Int get() = WeatherInfo(0, max, min, code, true, "", 0L).iconRes
+}
+
 data class WeatherInfo(
     val temp: Int,
     val max: Int,
@@ -15,6 +19,8 @@ data class WeatherInfo(
     val isDay: Boolean,
     val city: String,
     val fetchedAt: Long,
+    val pressure: Int = 0,
+    val daily: List<DayForecast> = emptyList(),
 ) {
     val isStale get() = System.currentTimeMillis() - fetchedAt > 30 * 60 * 1000L
 
@@ -66,31 +72,53 @@ class Weather(context: Context) {
             isDay = prefs.getBoolean("day", true),
             city = prefs.getString("city", "").orEmpty(),
             fetchedAt = prefs.getLong("at", 0L),
+            pressure = prefs.getInt("pressure", 0),
+            daily = parseDaily(prefs.getString("daily", "") ?: ""),
         )
+    }
+
+    private fun parseDaily(raw: String): List<DayForecast> = raw.split(';').filter { it.isNotBlank() }.mapNotNull { row ->
+        val parts = row.split(',')
+        if (parts.size < 4) null else runCatching {
+            DayForecast(parts[0].toLong(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt())
+        }.getOrNull()
     }
 
     @Throws(IOException::class)
     fun fetch(): WeatherInfo {
         val (lat, lon, city) = location()
         val url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon" +
-            "&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min" +
-            "&timezone=auto&forecast_days=1"
+            "&current=temperature_2m,weather_code,is_day,surface_pressure" +
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7"
         val json = JSONObject(get(url))
         val current = json.getJSONObject("current")
         val daily = json.getJSONObject("daily")
+        val times = daily.getJSONArray("time")
+        val codes = daily.getJSONArray("weather_code")
+        val maxes = daily.getJSONArray("temperature_2m_max")
+        val mins = daily.getJSONArray("temperature_2m_min")
+        val days = (0 until times.length()).map { i ->
+            val date = times.getString(i) // RRRR-MM-DD
+            val epochDay = java.time.LocalDate.parse(date).toEpochDay()
+            DayForecast(epochDay, codes.getInt(i), maxes.getDouble(i).roundToInt(), mins.getDouble(i).roundToInt())
+        }
         val info = WeatherInfo(
             temp = current.getDouble("temperature_2m").roundToInt(),
-            max = daily.getJSONArray("temperature_2m_max").getDouble(0).roundToInt(),
-            min = daily.getJSONArray("temperature_2m_min").getDouble(0).roundToInt(),
+            max = maxes.getDouble(0).roundToInt(),
+            min = mins.getDouble(0).roundToInt(),
             code = current.getInt("weather_code"),
             isDay = current.getInt("is_day") == 1,
             city = city,
             fetchedAt = System.currentTimeMillis(),
+            pressure = current.optDouble("surface_pressure", 0.0).roundToInt(),
+            daily = days,
         )
         prefs.edit()
             .putInt("temp", info.temp).putInt("max", info.max).putInt("min", info.min)
             .putInt("code", info.code).putBoolean("day", info.isDay)
             .putString("city", info.city).putLong("at", info.fetchedAt)
+            .putInt("pressure", info.pressure)
+            .putString("daily", info.daily.joinToString(";") { "${it.epochDay},${it.code},${it.max},${it.min}" })
             .apply()
         return info
     }

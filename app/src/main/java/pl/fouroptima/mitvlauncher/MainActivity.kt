@@ -42,6 +42,8 @@ class MainActivity : Activity() {
     private lateinit var railItems: ViewGroup
     private lateinit var railBottom: ViewGroup
     private lateinit var backdrop: Backdrop
+    private lateinit var appsOverlay: View
+    private lateinit var dockLabel: TextView
     private lateinit var backdropA: ImageView
     private lateinit var backdropB: ImageView
     private var backdropFront: ImageView? = null
@@ -75,11 +77,10 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
 
         grid = findViewById(R.id.grid)
-        val timeField = findViewById<View>(R.id.field_time)
-        clock = timeField.findViewById(R.id.field_value)
-        date = timeField.findViewById(R.id.field_label)
-        timeField.findViewById<ImageView>(R.id.field_icon).setImageResource(R.drawable.ic_clock_line)
-        setUpTopBar()
+        clock = findViewById(R.id.clock)
+        date = findViewById(R.id.date)
+        appsOverlay = findViewById(R.id.apps_overlay)
+        dockLabel = findViewById(R.id.dock_label)
 
         favorites = Favorites(this)
         updates = UpdateManager(this)
@@ -147,9 +148,9 @@ class MainActivity : Activity() {
     /** Przycisk Home na ekranie głównym: wróć na górę. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        grid.scrollToPosition(0)
-        if (railItems.childCount > 0) railItems.getChildAt(0).requestFocus() else focusIndex(adapter.firstTileIndex())
-        grid.post { grid.scrollToPosition(0) }
+        closePanel()
+        closeApps()
+        (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus()
     }
 
     /** Wstecz zamyka panel, a na ekranie głównym nie zamyka launchera. Menu na pilocie otwiera panel. */
@@ -158,7 +159,9 @@ class MainActivity : Activity() {
             KeyEvent.KEYCODE_BACK -> {
                 // Przytrzymanie Wstecz otwiera panel skrótów (zabezpieczenie, gdy pasek jest poza ekranem)
                 event.startTracking()
-                if (event.repeatCount == 0 && panel.visibility == View.VISIBLE) closePanel()
+                if (event.repeatCount == 0) {
+                    if (panel.visibility == View.VISIBLE) closePanel() else closeApps()
+                }
                 return true
             }
             KeyEvent.KEYCODE_MENU -> {
@@ -217,7 +220,8 @@ class MainActivity : Activity() {
             val row = Row.App(app, inFavorites = true, isFavorite = true)
             item.setOnClickListener { onTileClick(row) }
             item.setOnLongClickListener { onTileLongClick(row) }
-            item.setOnFocusChangeListener { _, has -> if (has) onTileFocus(row) }
+            val base = item.onFocusChangeListener
+            item.setOnFocusChangeListener { v, has -> base?.onFocusChange(v, has); if (has) onTileFocus(row) }
             if (app.packageName == focusedPkg) item.post { item.requestFocus() }
         }
         // Usunięto zaznaczoną aplikację z paska – zaznaczenie przechodzi na sąsiada
@@ -225,13 +229,17 @@ class MainActivity : Activity() {
             (railItems.getChildAt(0) ?: railBottom).post { (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus() }
         }
         addRailItem(railBottom, getString(R.string.rail_apps), getColor(R.color.ink)) { it.setImageResource(R.drawable.ic_apps) }
-            .setOnClickListener {
-                val index = adapter.rows.indexOfFirst { it is Row.Section && it.title == getString(R.string.section_apps) }
-                focusIndex(if (index >= 0) index + 1 else adapter.firstTileIndex())
+            .apply {
+                setOnClickListener { openApps() }
+                val base = onFocusChangeListener
+                setOnFocusChangeListener { v, has -> base?.onFocusChange(v, has); if (has) showDockLabel(getString(R.string.rail_apps)) }
             }
         addRailItem(railBottom, getString(R.string.rail_more), getColor(R.color.ink)) { it.setImageResource(R.drawable.ic_dots_white) }
-        // Nowa tapeta w panelu – patrz buildPanelRows
-            .setOnClickListener { openPanel() }
+            .apply {
+                setOnClickListener { openPanel() }
+                val base = onFocusChangeListener
+                setOnFocusChangeListener { v, has -> base?.onFocusChange(v, has); if (has) showDockLabel(getString(R.string.rail_more)) }
+            }
     }
 
     /** Element paska: ikona w kolorze marki aplikacji w białej pigułce; zaznaczona dostaje białe kółko. */
@@ -239,10 +247,11 @@ class MainActivity : Activity() {
         val item = LayoutInflater.from(this).inflate(R.layout.rail_item, group, false)
         val iconView = item.findViewById<ImageView>(R.id.rail_icon)
         icon(iconView)
-        iconView.imageTintList = android.content.res.ColorStateList.valueOf(accent)
+        iconView.imageTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.ink))
         item.contentDescription = label
         item.setOnFocusChangeListener { v, has ->
-            v.animate().scaleX(if (has) 1.1f else 1f).scaleY(if (has) 1.1f else 1f).setDuration(150).start()
+            v.animate().scaleX(if (has) 1.25f else 1f).scaleY(if (has) 1.25f else 1f).setDuration(150).start()
+            iconView.animate().alpha(if (has) 1f else 0.85f).setDuration(150).start()
         }
         group.addView(item)
         return item
@@ -369,53 +378,29 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun setUpTopBar() {
-        val weatherField = findViewById<View>(R.id.field_weather)
-        weatherField.findViewById<TextView>(R.id.field_label).text = getString(R.string.field_weather)
-        weatherField.findViewById<TextView>(R.id.field_value).text = "—"
-        weatherField.findViewById<ImageView>(R.id.field_icon).setImageResource(R.drawable.ic_w_cloud)
-        val placeField = findViewById<View>(R.id.field_place)
-        placeField.findViewById<TextView>(R.id.field_label).text = getString(R.string.field_place)
-        placeField.findViewById<TextView>(R.id.field_value).text = "—"
-        placeField.findViewById<ImageView>(R.id.field_icon).setImageResource(R.drawable.ic_tv_line)
-        for (id in listOf(R.id.top_apps, R.id.top_more)) {
-            val pill = findViewById<View>(id)
-            pill.isFocusable = true
-            pill.setOnFocusChangeListener { v, has ->
-                v.animate().scaleX(if (has) 1.05f else 1f).scaleY(if (has) 1.05f else 1f).setDuration(150).start()
-                v.backgroundTintList = android.content.res.ColorStateList.valueOf(if (has) getColor(R.color.ink) else 0xF2FFFFFF.toInt())
-                (v as ViewGroup).forEachTextAndImage { tv, iv ->
-                    tv?.setTextColor(getColor(if (has) android.R.color.white else R.color.text))
-                    iv?.imageTintList = if (has) android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE) else null
-                }
-            }
-        }
-        findViewById<View>(R.id.top_apps).setOnClickListener {
-            val index = adapter.rows.indexOfFirst { it is Row.Section && it.title == getString(R.string.section_apps) }
-            focusIndex(if (index >= 0) index + 1 else adapter.firstTileIndex())
-        }
-        findViewById<View>(R.id.top_more).setOnClickListener { openPanel() }
-    }
-
-    private fun ViewGroup.forEachTextAndImage(f: (TextView?, ImageView?) -> Unit) {
-        for (i in 0 until childCount) {
-            when (val c = getChildAt(i)) {
-                is TextView -> f(c, null)
-                is ImageView -> f(null, c)
-                is ViewGroup -> c.forEachTextAndImage(f)
-            }
-        }
-    }
-
     private fun showWeather() {
         val w = weatherInfo ?: return
-        val weatherField = findViewById<View>(R.id.field_weather)
-        weatherField.findViewById<ImageView>(R.id.field_icon).setImageResource(w.iconRes)
-        weatherField.findViewById<TextView>(R.id.field_value).text = "${w.temp}°, ${getString(w.descriptionRes)}"
-        weatherField.findViewById<TextView>(R.id.field_label).text =
-            getString(R.string.weather_range_nocity, w.max, w.min)
-        val placeField = findViewById<View>(R.id.field_place)
-        placeField.findViewById<TextView>(R.id.field_value).text = w.city.ifBlank { "—" }
+        findViewById<View>(R.id.weather).visibility = View.VISIBLE
+        findViewById<ImageView>(R.id.weather_icon).setImageResource(w.iconRes)
+        findViewById<TextView>(R.id.weather_temp).text = "${w.temp}°"
+        findViewById<TextView>(R.id.weather_desc).text = getString(w.descriptionRes)
+        val extra = mutableListOf<String>()
+        if (w.pressure > 0) extra += getString(R.string.pressure, w.pressure)
+        if (w.city.isNotBlank()) extra += w.city
+        findViewById<TextView>(R.id.weather_extra).text = extra.joinToString("  ·  ")
+
+        val forecast = findViewById<ViewGroup>(R.id.forecast)
+        forecast.removeAllViews()
+        val todayEpoch = java.time.LocalDate.now().toEpochDay()
+        for (day in w.daily.take(7)) {
+            val v = LayoutInflater.from(this).inflate(R.layout.day_item, forecast, false)
+            val dow = java.time.LocalDate.ofEpochDay(day.epochDay).dayOfWeek.value // 1 = poniedziałek
+            v.findViewById<TextView>(R.id.day_name).text =
+                if (day.epochDay == todayEpoch) getString(R.string.today) else DAY_NAMES[dow - 1]
+            v.findViewById<ImageView>(R.id.day_icon).setImageResource(day.iconRes)
+            v.findViewById<TextView>(R.id.day_temp).text = "${day.max}° / ${day.min}°"
+            forecast.addView(v)
+        }
     }
 
     /** Krótko: „dziś 10:32”, „wczoraj 21:05”, „środa”. */
@@ -437,7 +422,26 @@ class MainActivity : Activity() {
     /** Wybrany kafelek trafia na scenę; w rzędzie Ulubione pokazujemy też całą scenę (przewinięcie na górę). */
     private fun onTileFocus(row: Row) {
         adapter.showInHero(row)
-        if (row is Row.App && (row.inFavorites || row.inRecent) && grid.computeVerticalScrollOffset() > 0) grid.smoothScrollToPosition(0)
+        if (row is Row.App && row.inFavorites) showDockLabel(row.app.label)
+    }
+
+    private fun showDockLabel(text: String) {
+        dockLabel.text = text
+        dockLabel.animate().cancel()
+        dockLabel.alpha = 1f
+    }
+
+    private fun openApps() {
+        appsOverlay.visibility = View.VISIBLE
+        appsOverlay.alpha = 0f
+        appsOverlay.animate().alpha(1f).setDuration(200).start()
+        focusIndex(adapter.firstTileIndex())
+    }
+
+    private fun closeApps() {
+        if (appsOverlay.visibility != View.VISIBLE) return
+        appsOverlay.animate().alpha(0f).setDuration(160).withEndAction { appsOverlay.visibility = View.GONE }.start()
+        (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus()
     }
 
     private fun loadApps() {
@@ -450,7 +454,7 @@ class MainActivity : Activity() {
                 render()
                 if (focusOnLoad) {
                     focusOnLoad = false
-                    if (railItems.childCount > 0) railItems.getChildAt(0).requestFocus() else focusIndex(adapter.firstTileIndex())
+                    (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus()
                 }
             }
         }
@@ -468,11 +472,7 @@ class MainActivity : Activity() {
         val favApps = favPackages.mapNotNull { byPackage[it] }
 
         val rows = mutableListOf<Row>()
-        rows += Row.Hero
         buildRail(favApps)
-        if (favApps.isEmpty()) rows += Row.Hint(getString(R.string.hint_rail))
-
-        adapter.recentApps = favorites.recent().mapNotNull { byPackage[it] }.map { it to (openedShort(it.packageName) ?: "") }
 
         rows += Row.Section(getString(R.string.section_apps))
         apps.forEach { rows += Row.App(it, inFavorites = false, isFavorite = it.packageName in favSet) }
@@ -488,9 +488,8 @@ class MainActivity : Activity() {
     private fun focusIndex(index: Int) {
         if (index < 0) return
         // Ulubione leżą tuż pod sceną – wtedy pokazujemy ekran od samej góry
-        val top = (adapter.rows.getOrNull(index) as? Row.App)?.let { it.inFavorites || it.inRecent } == true
         grid.post {
-            grid.scrollToPosition(if (top) 0 else index)
+            grid.scrollToPosition(index)
             grid.post { grid.findViewHolderForAdapterPosition(index)?.itemView?.requestFocus() }
         }
     }
@@ -504,6 +503,7 @@ class MainActivity : Activity() {
                 } else {
                     start(intent)
                     favorites.markOpened(row.app.packageName)
+                    if (!row.inFavorites) appsOverlay.visibility = View.GONE
                     grid.postDelayed({ render() }, 600) // rząd „Ostatnio” odświeży się, gdy wrócisz
                 }
             }
@@ -614,6 +614,7 @@ class MainActivity : Activity() {
         const val ACTION_UPDATE = 3
         private const val UPDATE_INTERVAL_MS = 30 * 60 * 1000L
         private const val BACKDROP_INTERVAL_MS = 20 * 60 * 1000L
-        private const val MAX_RAIL = 7
+        private const val MAX_RAIL = 8
+        private val DAY_NAMES = listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd")
     }
 }

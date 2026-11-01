@@ -10,4 +10,4 @@
     android:letterSpacing="0.2"
     android:textAllCaps="true"
     android:textColor="@color/text_soft"
-    android:textSize="12sp" />
+    android:textSize="13sp" />

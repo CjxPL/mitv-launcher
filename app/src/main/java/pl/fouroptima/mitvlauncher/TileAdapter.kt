@@ -48,7 +48,6 @@ class TileAdapter(
     var rows: List<Row> = emptyList()
         private set
 
-    private var hero: HeroHolder? = null
     private var heroRow: Row? = null
 
     /** Zdanie „Otwierane dziś o …” dla aplikacji (null = pokaż podpowiedź o pilocie). */
@@ -62,10 +61,6 @@ class TileAdapter(
 
     /** Pogoda pokazywana na scenie powitalnej (null = brak). */
     var weather: WeatherInfo? = null
-        set(value) {
-            field = value
-            refreshGreeting()
-        }
 
     init {
         setHasStableIds(true)
@@ -82,14 +77,10 @@ class TileAdapter(
 
     /** Zmienia treść sceny bez przebudowy listy (płynne przejście). */
     fun showInHero(row: Row?) {
-        if (row != null && row.key == heroRow?.key) return
         heroRow = row
-        hero?.show(row, animate = true)
     }
 
-    fun refreshGreeting() {
-        if (heroRow == null) hero?.show(null, animate = false)
-    }
+    fun refreshGreeting() = Unit
 
     override fun getItemCount() = rows.size
 
@@ -105,12 +96,7 @@ class TileAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            TYPE_HERO -> {
-                val view = inflater.inflate(R.layout.item_hero, parent, false)
-                val h = parent.height.takeIf { it > 0 } ?: parent.resources.displayMetrics.heightPixels
-                view.layoutParams.height = h - parent.paddingTop - (8 * parent.resources.displayMetrics.density).toInt()
-                HeroHolder(view).also { hero = it }
-            }
+            TYPE_HERO -> throw IllegalStateException("scena usunięta")
             TYPE_SECTION -> TextHolder(inflater.inflate(R.layout.item_section, parent, false))
             TYPE_HINT -> TextHolder(inflater.inflate(R.layout.item_hint, parent, false))
             else -> {
@@ -128,7 +114,7 @@ class TileAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = rows[position]) {
-            is Row.Hero -> (holder as HeroHolder).show(heroRow, animate = false)
+            is Row.Hero -> Unit
             is Row.Section -> (holder as TextHolder).text.text = row.title
             is Row.Hint -> (holder as TextHolder).text.text = row.text
             is Row.App -> (holder as TileHolder).bindApp(row)
@@ -138,120 +124,6 @@ class TileAdapter(
 
     class TextHolder(view: View) : RecyclerView.ViewHolder(view) {
         val text: TextView = view as TextView
-    }
-
-    /** Scena jak we wzorze: nagłówek z lewej, karta „Ostatnio” dolna-lewa, karta aplikacji dolna-prawa. */
-    inner class HeroHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val poster: View = view.findViewById(R.id.hero_poster)
-        private val posterImage: ImageView = view.findViewById(R.id.hero_poster_image)
-        private val cardTitle: TextView = view.findViewById(R.id.hero_card_title)
-        private val cardSub: TextView = view.findViewById(R.id.hero_card_sub)
-        private val cardDesc: TextView = view.findViewById(R.id.hero_card_desc)
-        private val statFav: View = view.findViewById(R.id.stat_fav)
-        private val statTime: View = view.findViewById(R.id.stat_time)
-        private val statKind: View = view.findViewById(R.id.stat_kind)
-        private val text: View = view.findViewById(R.id.hero_text)
-        private val eyebrow: TextView = view.findViewById(R.id.hero_eyebrow)
-        private val title: TextView = view.findViewById(R.id.hero_title)
-        private val subtitle: TextView = view.findViewById(R.id.hero_subtitle)
-        private val recentLines: TextView = view.findViewById(R.id.recent_lines)
-        private val recentImage: ImageView = view.findViewById(R.id.recent_image)
-
-        init {
-            posterImage.clipToOutline = true
-            recentImage.clipToOutline = true
-        }
-
-        fun show(row: Row?, animate: Boolean) {
-            val res = itemView.resources
-            bindRecent()
-            val app = (row as? Row.App)?.app
-            when {
-                app != null -> {
-                    eyebrow.text = res.getString(
-                        when {
-                            (row as Row.App).inRecent -> R.string.hero_recent
-                            row.isFavorite -> R.string.hero_favorite
-                            else -> R.string.hero_app
-                        },
-                    )
-                    title.text = app.label
-                    subtitle.text = openedText?.invoke(app.packageName) ?: res.getString(R.string.hero_open_hint)
-                    poster.visibility = View.VISIBLE
-                    cardTitle.text = app.label
-                    cardSub.text = openedText?.invoke(app.packageName) ?: res.getString(R.string.stat_never)
-                    cardDesc.text = res.getString(if (row.isFavorite) R.string.card_desc_fav else R.string.card_desc_app)
-                    stat(statFav, R.drawable.ic_star_line, res.getString(if (row.isFavorite) R.string.stat_fav_yes else R.string.stat_fav_no))
-                    stat(statTime, R.drawable.ic_clock_line, openedShort?.invoke(app.packageName) ?: res.getString(R.string.stat_never))
-                    stat(statKind, R.drawable.ic_tv_line, res.getString(if (app.isTv) R.string.stat_tv else R.string.stat_phone))
-                    if (app.banner != null) {
-                        posterImage.setPadding(0, 0, 0, 0)
-                        posterImage.setImageDrawable(app.banner)
-                        posterImage.backgroundTintList = null
-                    } else {
-                        posterImage.setPadding(6, 6, 6, 6)
-                        posterImage.setImageDrawable(app.icon)
-                        posterImage.backgroundTintList = ColorStateList.valueOf(Artwork.tint(app))
-                    }
-                }
-                row is Row.Action -> {
-                    eyebrow.text = res.getString(R.string.hero_shortcut)
-                    title.text = row.label
-                    subtitle.text = ""
-                    poster.visibility = View.GONE
-                }
-                else -> {
-                    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-                    eyebrow.text = res.getString(R.string.hero_welcome)
-                    title.text = res.getString(
-                        when (hour) {
-                            in 5..10 -> R.string.greeting_morning
-                            in 11..17 -> R.string.greeting_day
-                            else -> R.string.greeting_evening
-                        },
-                    )
-                    val w = weather
-                    subtitle.text = if (w != null) {
-                        res.getString(R.string.hero_weather, w.temp, res.getString(w.descriptionRes)) +
-                            ". " + res.getString(R.string.hero_default_hint)
-                    } else {
-                        res.getString(R.string.hero_default_hint)
-                    }
-                    poster.visibility = View.GONE
-                }
-            }
-            if (animate) {
-                text.alpha = 0f
-                text.translationY = 14f
-                text.animate().alpha(1f).translationY(0f).setDuration(240).start()
-                if (poster.visibility == View.VISIBLE) {
-                    poster.alpha = 0f
-                    poster.translationY = 10f
-                    poster.animate().alpha(1f).translationY(0f).setDuration(280).start()
-                }
-            }
-        }
-
-        private fun stat(v: View, iconRes: Int, label: String) {
-            v.findViewById<ImageView>(R.id.stat_icon).setImageResource(iconRes)
-            v.findViewById<TextView>(R.id.stat_text).text = label
-        }
-
-        private fun bindRecent() {
-            val res = itemView.resources
-            val list = recentApps
-            recentLines.text = if (list.isEmpty()) {
-                res.getString(R.string.card_recent_empty)
-            } else {
-                list.take(3).joinToString("\n") { (app, line) -> "${app.label} · $line" }
-            }
-            val first = list.firstOrNull()?.first
-            when {
-                first?.banner != null -> { recentImage.setImageDrawable(first.banner); recentImage.backgroundTintList = null }
-                first != null -> { recentImage.setImageDrawable(first.icon); recentImage.backgroundTintList = ColorStateList.valueOf(Artwork.tint(first)) }
-                else -> { recentImage.setImageDrawable(null); recentImage.backgroundTintList = null }
-            }
-        }
     }
 
     inner class TileHolder(view: View) : RecyclerView.ViewHolder(view) {

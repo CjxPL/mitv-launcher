@@ -90,4 +90,7 @@
     <string name="stat_tv">Aplikacja TV</string>
     <string name="stat_phone">Z telefonu</string>
     <string name="hero_welcome_title">Dobry wieczór</string>
+    <string name="pressure">%1$d hPa</string>
+    <string name="overlay_apps">Wszystkie aplikacje</string>
+    <string name="today">Dziś</string>
 </resources>
