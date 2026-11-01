@@ -6,4 +6,6 @@
     <dimen name="tile_gap">10dp</dimen>
     <dimen name="tile_fallback_width">172dp</dimen>
     <dimen name="side">56dp</dimen>
+    <dimen name="rail_collapsed">80dp</dimen>
+    <dimen name="rail_expanded">280dp</dimen>
 </resources>

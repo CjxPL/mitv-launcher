@@ -38,7 +38,11 @@ class MainActivity : Activity() {
     private lateinit var panel: View
     private lateinit var panelScrim: View
     private lateinit var panelRows: ViewGroup
-    private lateinit var menuButton: View
+    private lateinit var rail: View
+    private lateinit var railItems: ViewGroup
+    private lateinit var railBottom: ViewGroup
+    private var railExpanded = false
+    private var railAnimator: android.animation.ValueAnimator? = null
     private var focusBeforePanel: View? = null
     private var weatherInfo: WeatherInfo? = null
 
@@ -131,7 +135,7 @@ class MainActivity : Activity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         grid.scrollToPosition(0)
-        focusIndex(adapter.firstTileIndex())
+        if (railItems.childCount > 0) railItems.getChildAt(0).requestFocus() else focusIndex(adapter.firstTileIndex())
         grid.post { grid.scrollToPosition(0) }
     }
 
@@ -156,14 +160,98 @@ class MainActivity : Activity() {
         panel = findViewById(R.id.side_panel)
         panelScrim = findViewById(R.id.panel_scrim)
         panelRows = findViewById(R.id.panel_rows)
-        menuButton = findViewById(R.id.menu_button)
         findViewById<TextView>(R.id.panel_version).text = getString(R.string.version, BuildConfig.VERSION_NAME)
-        menuButton.setOnClickListener { openPanel() }
-        menuButton.setOnFocusChangeListener { v, has ->
-            v.animate().scaleX(if (has) 1.15f else 1f).scaleY(if (has) 1.15f else 1f).setDuration(150).start()
-        }
         panelScrim.setOnClickListener { closePanel() }
         buildPanelRows()
+        setUpRail()
+    }
+
+    // ---------- Pasek ulubionych po lewej ----------
+
+    private fun setUpRail() {
+        rail = findViewById(R.id.rail)
+        railItems = findViewById(R.id.rail_items)
+        railBottom = findViewById(R.id.rail_bottom)
+        // Pasek rozwija się, gdy ma w sobie zaznaczenie, i zwija, gdy zaznaczenie wraca do siatki
+        window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { _, newFocus ->
+            setRailExpanded(newFocus != null && isInRail(newFocus))
+        }
+    }
+
+    private fun isInRail(v: View): Boolean {
+        var p: android.view.ViewParent? = v.parent
+        if (v === rail) return true
+        while (p != null) {
+            if (p === rail) return true
+            p = p.parent
+        }
+        return false
+    }
+
+    private fun setRailExpanded(expanded: Boolean) {
+        if (railExpanded == expanded) return
+        railExpanded = expanded
+        val from = rail.width
+        val to = resources.getDimensionPixelSize(if (expanded) R.dimen.rail_expanded else R.dimen.rail_collapsed)
+        railAnimator?.cancel()
+        railAnimator = android.animation.ValueAnimator.ofInt(from, to).apply {
+            duration = 220
+            addUpdateListener { rail.layoutParams = rail.layoutParams.apply { width = it.animatedValue as Int }; rail.requestLayout() }
+            start()
+        }
+        val labelAlpha = if (expanded) 1f else 0f
+        for (group in listOf(railItems, railBottom)) {
+            for (i in 0 until group.childCount) {
+                group.getChildAt(i).findViewById<View>(R.id.rail_label)?.animate()?.alpha(labelAlpha)?.setDuration(180)?.start()
+            }
+        }
+    }
+
+    private fun buildRail(favApps: List<AppEntry>) {
+        val focusedPkg = (currentFocus?.takeIf { isInRail(it) }?.tag as? String)
+        railItems.removeAllViews()
+        railBottom.removeAllViews()
+        for (app in favApps) {
+            val item = addRailItem(railItems, app.label, Artwork.accent(app)) {
+                it.setImageBitmap(Artwork.whiteIcon(app))
+            }
+            item.tag = app.packageName
+            val row = Row.App(app, inFavorites = true, isFavorite = true)
+            item.setOnClickListener { onTileClick(row) }
+            item.setOnLongClickListener { onTileLongClick(row) }
+            item.setOnFocusChangeListener { _, has -> if (has) onTileFocus(row) }
+            if (app.packageName == focusedPkg) item.post { item.requestFocus() }
+        }
+        // Usunięto zaznaczoną aplikację z paska – zaznaczenie przechodzi na sąsiada
+        if (focusedPkg != null && favApps.none { it.packageName == focusedPkg }) {
+            (railItems.getChildAt(0) ?: railBottom).post { (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus() }
+        }
+        addRailItem(railBottom, getString(R.string.rail_apps), getColor(R.color.glass)) { it.setImageResource(R.drawable.ic_apps) }
+            .setOnClickListener {
+                val index = adapter.rows.indexOfFirst { it is Row.Section && it.title == getString(R.string.section_apps) }
+                focusIndex(if (index >= 0) index + 1 else adapter.firstTileIndex())
+            }
+        addRailItem(railBottom, getString(R.string.rail_more), getColor(R.color.accent)) { it.setImageResource(R.drawable.ic_dots_white) }
+            .setOnClickListener { openPanel() }
+    }
+
+    /** Element paska: biała ikona, nazwa widoczna po rozwinięciu, po zaznaczeniu tło w kolorze aplikacji. */
+    private fun addRailItem(group: ViewGroup, label: String, accent: Int, icon: (ImageView) -> Unit): View {
+        val item = LayoutInflater.from(this).inflate(R.layout.rail_item, group, false)
+        icon(item.findViewById(R.id.rail_icon))
+        item.findViewById<TextView>(R.id.rail_label).apply {
+            text = label
+            alpha = if (railExpanded) 1f else 0f
+        }
+        item.backgroundTintList = android.content.res.ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+            intArrayOf(accent, 0),
+        )
+        item.setOnFocusChangeListener { v, has ->
+            v.animate().scaleX(if (has) 1.04f else 1f).scaleY(if (has) 1.04f else 1f).setDuration(150).start()
+        }
+        group.addView(item)
+        return item
     }
 
     private fun buildPanelRows() {
@@ -213,7 +301,7 @@ class MainActivity : Activity() {
         if (panel.visibility != View.VISIBLE) return
         panelScrim.animate().alpha(0f).setDuration(200).withEndAction { panelScrim.visibility = View.GONE }.start()
         panel.animate().translationX(panel.width.toFloat()).setDuration(220).withEndAction { panel.visibility = View.GONE }.start()
-        (focusBeforePanel ?: menuButton).requestFocus()
+        (focusBeforePanel ?: railBottom.getChildAt(railBottom.childCount - 1))?.requestFocus()
         focusBeforePanel = null
     }
 
@@ -279,7 +367,7 @@ class MainActivity : Activity() {
                 render()
                 if (focusOnLoad) {
                     focusOnLoad = false
-                    focusIndex(adapter.firstTileIndex())
+                    if (railItems.childCount > 0) railItems.getChildAt(0).requestFocus() else focusIndex(adapter.firstTileIndex())
                 }
             }
         }
@@ -298,12 +386,8 @@ class MainActivity : Activity() {
 
         val rows = mutableListOf<Row>()
         rows += Row.Hero
-        rows += Row.Section(getString(R.string.section_favorites))
-        if (favApps.isEmpty()) {
-            rows += Row.Hint(getString(R.string.hint_favorites))
-        } else {
-            favApps.forEach { rows += Row.App(it, inFavorites = true, isFavorite = true) }
-        }
+        buildRail(favApps)
+        if (favApps.isEmpty()) rows += Row.Hint(getString(R.string.hint_rail))
 
         val recentApps = favorites.recent().mapNotNull { byPackage[it] }
         if (recentApps.isNotEmpty()) {
@@ -382,10 +466,7 @@ class MainActivity : Activity() {
                 result.onSuccess { info ->
                     val changed = info?.versionCode != updateInfo?.versionCode
                     updateInfo = info
-                    if (changed) {
-                        render()
-                        menuButton.alpha = 1f
-                    }
+                    if (changed) render()
                     when {
                         info != null && installIfFound -> startDownload(info)
                         info == null && !silent -> toast(getString(R.string.up_to_date, BuildConfig.VERSION_NAME))

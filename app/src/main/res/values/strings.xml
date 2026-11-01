@@ -66,4 +66,7 @@
     <string name="opened_today">Otwierane dziś o %1$s</string>
     <string name="opened_yesterday">Otwierane wczoraj o %1$s</string>
     <string name="opened_on">Otwierane %1$s</string>
+    <string name="rail_apps">Wszystkie aplikacje</string>
+    <string name="rail_more">Skróty</string>
+    <string name="hint_rail">Ulubione są na pasku po lewej. Przytrzymaj OK na aplikacji, żeby dodać ją do paska.</string>
 </resources>
