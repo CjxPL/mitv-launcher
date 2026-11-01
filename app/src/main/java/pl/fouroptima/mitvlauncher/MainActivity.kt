@@ -38,9 +38,7 @@ class MainActivity : Activity() {
     private lateinit var panel: View
     private lateinit var panelScrim: View
     private lateinit var panelRows: ViewGroup
-    private lateinit var rail: View
-    private lateinit var railItems: ViewGroup
-    private lateinit var railBottom: ViewGroup
+    private lateinit var dock: DockView
     private lateinit var backdrop: Backdrop
     private lateinit var appsOverlay: View
     private lateinit var dockLabel: TextView
@@ -150,7 +148,7 @@ class MainActivity : Activity() {
         super.onNewIntent(intent)
         closePanel()
         closeApps()
-        (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus()
+        dock.requestFocus()
     }
 
     /** Wstecz zamyka panel, a na ekranie głównym nie zamyka launchera. Menu na pilocie otwiera panel. */
@@ -192,69 +190,29 @@ class MainActivity : Activity() {
         setUpRail()
     }
 
-    // ---------- Pasek ulubionych po lewej ----------
+    // ---------- Dok-karuzela ----------
 
     private fun setUpRail() {
-        rail = findViewById(R.id.rail)
-        railItems = findViewById(R.id.rail_items)
-        railBottom = findViewById(R.id.rail_bottom)
-    }
-
-    private fun isInRail(v: View): Boolean {
-        var p: android.view.ViewParent? = v.parent
-        if (v === rail) return true
-        while (p != null) {
-            if (p === rail) return true
-            p = p.parent
-        }
-        return false
+        dock = findViewById(R.id.dock)
+        dock.onSelected = { item -> showDockLabel(item.label) }
     }
 
     private fun buildRail(favApps: List<AppEntry>) {
-        val focusedPkg = (currentFocus?.takeIf { isInRail(it) }?.tag as? String)
-        railItems.removeAllViews()
-        railBottom.removeAllViews()
+        val keep = dock.selectedItem()?.key
+        val items = ArrayList<DockView.Item>()
         for (app in favApps.take(MAX_RAIL)) {
-            val item = addRailItem(railItems, app.label, Artwork.accent(app)) { it.setImageBitmap(Artwork.whiteIcon(app)) }
-            item.tag = app.packageName
             val row = Row.App(app, inFavorites = true, isFavorite = true)
-            item.setOnClickListener { onTileClick(row) }
-            item.setOnLongClickListener { onTileLongClick(row) }
-            val base = item.onFocusChangeListener
-            item.setOnFocusChangeListener { v, has -> base?.onFocusChange(v, has); if (has) onTileFocus(row) }
-            if (app.packageName == focusedPkg) item.post { item.requestFocus() }
+            items += DockView.Item(
+                key = "app:${app.packageName}",
+                label = app.label,
+                bitmap = Artwork.whiteIcon(app),
+                onClick = { onTileClick(row) },
+                onLongClick = { onTileLongClick(row) },
+            )
         }
-        // Usunięto zaznaczoną aplikację z paska – zaznaczenie przechodzi na sąsiada
-        if (focusedPkg != null && favApps.none { it.packageName == focusedPkg }) {
-            (railItems.getChildAt(0) ?: railBottom).post { (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus() }
-        }
-        addRailItem(railBottom, getString(R.string.rail_apps), getColor(R.color.ink)) { it.setImageResource(R.drawable.ic_apps) }
-            .apply {
-                setOnClickListener { openApps() }
-                val base = onFocusChangeListener
-                setOnFocusChangeListener { v, has -> base?.onFocusChange(v, has); if (has) showDockLabel(getString(R.string.rail_apps)) }
-            }
-        addRailItem(railBottom, getString(R.string.rail_more), getColor(R.color.ink)) { it.setImageResource(R.drawable.ic_dots_white) }
-            .apply {
-                setOnClickListener { openPanel() }
-                val base = onFocusChangeListener
-                setOnFocusChangeListener { v, has -> base?.onFocusChange(v, has); if (has) showDockLabel(getString(R.string.rail_more)) }
-            }
-    }
-
-    /** Element paska: ikona w kolorze marki aplikacji w białej pigułce; zaznaczona dostaje białe kółko. */
-    private fun addRailItem(group: ViewGroup, label: String, accent: Int, icon: (ImageView) -> Unit): View {
-        val item = LayoutInflater.from(this).inflate(R.layout.rail_item, group, false)
-        val iconView = item.findViewById<ImageView>(R.id.rail_icon)
-        icon(iconView)
-        iconView.imageTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.ink))
-        item.contentDescription = label
-        item.setOnFocusChangeListener { v, has ->
-            v.animate().scaleX(if (has) 1.25f else 1f).scaleY(if (has) 1.25f else 1f).setDuration(150).start()
-            iconView.animate().alpha(if (has) 1f else 0.85f).setDuration(150).start()
-        }
-        group.addView(item)
-        return item
+        items += DockView.Item("apps", getString(R.string.rail_apps), iconRes = R.drawable.ic_apps, onClick = { openApps() })
+        items += DockView.Item("more", getString(R.string.rail_more), iconRes = R.drawable.ic_dots_white, onClick = { openPanel() })
+        dock.setItems(items, keepKey = keep)
     }
 
     private fun buildPanelRows() {
@@ -315,7 +273,7 @@ class MainActivity : Activity() {
         if (panel.visibility != View.VISIBLE) return
         panelScrim.animate().alpha(0f).setDuration(200).withEndAction { panelScrim.visibility = View.GONE }.start()
         panel.animate().translationX(panel.width.toFloat()).setDuration(220).withEndAction { panel.visibility = View.GONE }.start()
-        (focusBeforePanel ?: railBottom.getChildAt(railBottom.childCount - 1))?.requestFocus()
+        (focusBeforePanel ?: dock).requestFocus()
         focusBeforePanel = null
     }
 
@@ -441,7 +399,7 @@ class MainActivity : Activity() {
     private fun closeApps() {
         if (appsOverlay.visibility != View.VISIBLE) return
         appsOverlay.animate().alpha(0f).setDuration(160).withEndAction { appsOverlay.visibility = View.GONE }.start()
-        (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus()
+        dock.requestFocus()
     }
 
     private fun loadApps() {
@@ -454,7 +412,7 @@ class MainActivity : Activity() {
                 render()
                 if (focusOnLoad) {
                     focusOnLoad = false
-                    (railItems.getChildAt(0) ?: railBottom.getChildAt(0))?.requestFocus()
+                    dock.requestFocus()
                 }
             }
         }

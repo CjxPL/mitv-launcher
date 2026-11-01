@@ -22,7 +22,7 @@ data class WeatherInfo(
     val pressure: Int = 0,
     val daily: List<DayForecast> = emptyList(),
 ) {
-    val isStale get() = System.currentTimeMillis() - fetchedAt > 30 * 60 * 1000L
+    val isStale get() = System.currentTimeMillis() - fetchedAt > 30 * 60 * 1000L || daily.isEmpty()
 
     /** Ikona wg kodu pogody WMO (tak raportuje Open-Meteo). */
     val iconRes: Int
@@ -174,6 +174,13 @@ class Weather(context: Context) {
         "piaseczno" -> "Piaseczno"
         "legionowo" -> "Legionowo"
         "plock" -> "Płock"
+        "wegrow" -> "Węgrów"
+        "wolomin" -> "Wołomin"
+        "minsk mazowiecki" -> "Mińsk Mazowiecki"
+        "siedlce" -> "Siedlce"
+        "otwock" -> "Otwock"
+        "grodzisk mazowiecki" -> "Grodzisk Mazowiecki"
+        "nowy dwor mazowiecki" -> "Nowy Dwór Mazowiecki"
         else -> name
     }
 
