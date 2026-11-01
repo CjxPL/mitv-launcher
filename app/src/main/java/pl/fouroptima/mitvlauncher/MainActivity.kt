@@ -156,7 +156,9 @@ class MainActivity : Activity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         when (keyCode) {
             KeyEvent.KEYCODE_BACK -> {
-                if (panel.visibility == View.VISIBLE) closePanel()
+                // Przytrzymanie Wstecz otwiera panel skrótów (zabezpieczenie, gdy pasek jest poza ekranem)
+                event.startTracking()
+                if (event.repeatCount == 0 && panel.visibility == View.VISIBLE) closePanel()
                 return true
             }
             KeyEvent.KEYCODE_MENU -> {
@@ -165,6 +167,14 @@ class MainActivity : Activity() {
             }
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (panel.visibility != View.VISIBLE) openPanel()
+            return true
+        }
+        return super.onKeyLongPress(keyCode, event)
     }
 
     // ---------- Panel skrótów ----------
@@ -201,7 +211,7 @@ class MainActivity : Activity() {
         val focusedPkg = (currentFocus?.takeIf { isInRail(it) }?.tag as? String)
         railItems.removeAllViews()
         railBottom.removeAllViews()
-        for (app in favApps) {
+        for (app in favApps.take(MAX_RAIL)) {
             val item = addRailItem(railItems, app.label, Artwork.accent(app)) {
                 it.setImageBitmap(Artwork.whiteIcon(app))
                 it.imageTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.ink))
@@ -608,5 +618,6 @@ class MainActivity : Activity() {
         const val ACTION_UPDATE = 3
         private const val UPDATE_INTERVAL_MS = 30 * 60 * 1000L
         private const val BACKDROP_INTERVAL_MS = 20 * 60 * 1000L
+        private const val MAX_RAIL = 7
     }
 }
