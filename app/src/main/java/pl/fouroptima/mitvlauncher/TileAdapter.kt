@@ -99,7 +99,12 @@ class TileAdapter(
             TYPE_HERO -> {
                 val view = inflater.inflate(R.layout.item_hero, parent, false)
                 val h = parent.height.takeIf { it > 0 } ?: parent.resources.displayMetrics.heightPixels
-                view.layoutParams.height = (h * 0.56f).toInt()
+                val heroH = (h * 0.56f).toInt()
+                view.layoutParams.height = heroH
+                view.findViewById<View>(R.id.hero_poster).layoutParams.apply {
+                    height = (heroH * 0.5f).toInt()
+                    width = height * 16 / 9
+                }
                 HeroHolder(view).also { hero = it }
             }
             TYPE_SECTION -> TextHolder(inflater.inflate(R.layout.item_section, parent, false))

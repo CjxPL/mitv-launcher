@@ -98,7 +98,8 @@ class Weather(context: Context) {
     /** Współrzędne i miasto; zapamiętane na dobę, żeby nie pytać przy każdym odświeżeniu. */
     private fun location(): Triple<Double, Double, String> {
         val at = prefs.getLong("loc_at", 0L)
-        if (prefs.contains("lat") && System.currentTimeMillis() - at < 24 * 60 * 60 * 1000L) {
+        val sameVersion = prefs.getInt("loc_ver", 0) == BuildConfig.VERSION_CODE
+        if (sameVersion && prefs.contains("lat") && System.currentTimeMillis() - at < 24 * 60 * 60 * 1000L) {
             return Triple(
                 prefs.getString("lat", null)!!.toDouble(),
                 prefs.getString("lon", null)!!.toDouble(),
@@ -107,16 +108,45 @@ class Weather(context: Context) {
         }
         val located = runCatching {
             val j = JSONObject(get("https://ipapi.co/json/"))
-            Triple(j.getDouble("latitude"), j.getDouble("longitude"), j.optString("city", ""))
+            Triple(j.getDouble("latitude"), j.getDouble("longitude"), polishCity(j.optString("city", "")))
         }.getOrNull()
         val result = located ?: Triple(52.23, 21.01, "Warszawa")
         if (located != null) {
             prefs.edit()
                 .putString("lat", result.first.toString()).putString("lon", result.second.toString())
                 .putString("loc_city", result.third).putLong("loc_at", System.currentTimeMillis())
+                .putInt("loc_ver", BuildConfig.VERSION_CODE)
                 .apply()
         }
         return result
+    }
+
+    /** Serwis lokalizacji zwraca nazwy po angielsku – najczęstsze polskie miasta tłumaczymy. */
+    private fun polishCity(name: String): String = when (name.trim().lowercase()) {
+        "warsaw" -> "Warszawa"
+        "cracow", "krakow" -> "Kraków"
+        "lodz" -> "Łódź"
+        "wroclaw" -> "Wrocław"
+        "poznan" -> "Poznań"
+        "gdansk" -> "Gdańsk"
+        "szczecin" -> "Szczecin"
+        "bydgoszcz" -> "Bydgoszcz"
+        "lublin" -> "Lublin"
+        "bialystok" -> "Białystok"
+        "katowice" -> "Katowice"
+        "gdynia" -> "Gdynia"
+        "czestochowa" -> "Częstochowa"
+        "radom" -> "Radom"
+        "torun" -> "Toruń"
+        "rzeszow" -> "Rzeszów"
+        "kielce" -> "Kielce"
+        "olsztyn" -> "Olsztyn"
+        "lomianki" -> "Łomianki"
+        "pruszkow" -> "Pruszków"
+        "piaseczno" -> "Piaseczno"
+        "legionowo" -> "Legionowo"
+        "plock" -> "Płock"
+        else -> name
     }
 
     private fun get(url: String): String {
