@@ -32,6 +32,11 @@
             android:layout_height="match_parent"
             android:background="@drawable/haze" />
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/haze_left" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/grid"
             android:layout_width="match_parent"

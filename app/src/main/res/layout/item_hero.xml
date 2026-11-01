@@ -17,6 +17,8 @@
 
         <TextView
             android:id="@+id/hero_eyebrow"
+            android:shadowColor="#CCFFFFFF"
+            android:shadowRadius="14"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:letterSpacing="0.42"
@@ -26,6 +28,8 @@
 
         <TextView
             android:id="@+id/hero_title"
+            android:shadowColor="#CCFFFFFF"
+            android:shadowRadius="14"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
@@ -39,6 +43,8 @@
 
         <TextView
             android:id="@+id/hero_subtitle"
+            android:shadowColor="#CCFFFFFF"
+            android:shadowRadius="14"
             android:layout_width="360dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
