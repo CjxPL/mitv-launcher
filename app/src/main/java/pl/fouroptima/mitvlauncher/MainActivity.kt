@@ -39,6 +39,7 @@ class MainActivity : Activity() {
     private lateinit var panelScrim: View
     private lateinit var panelRows: ViewGroup
     private lateinit var dock: DockView
+    private var thinFace: android.graphics.Typeface? = null
     private lateinit var backdrop: Backdrop
     private lateinit var appsOverlay: View
     private lateinit var dockLabel: TextView
@@ -77,6 +78,13 @@ class MainActivity : Activity() {
         grid = findViewById(R.id.grid)
         clock = findViewById(R.id.clock)
         date = findViewById(R.id.date)
+        // Czcionka „Velvet Hour” – cienkie, rysowane cyfry (Poiret One, licencja OFL w assets/fonts)
+        val thin = runCatching { android.graphics.Typeface.createFromAsset(assets, "fonts/PoiretOne-Regular.ttf") }.getOrNull()
+        thinFace = thin
+        if (thin != null) {
+            clock.typeface = thin
+            findViewById<TextView>(R.id.weather_temp).typeface = thin
+        }
         appsOverlay = findViewById(R.id.apps_overlay)
         dockLabel = findViewById(R.id.dock_label)
 
@@ -356,7 +364,11 @@ class MainActivity : Activity() {
             v.findViewById<TextView>(R.id.day_name).text =
                 if (day.epochDay == todayEpoch) getString(R.string.today) else DAY_NAMES[dow - 1]
             v.findViewById<ImageView>(R.id.day_icon).setImageResource(day.iconRes)
-            v.findViewById<TextView>(R.id.day_temp).text = "${day.max}° / ${day.min}°"
+            v.findViewById<TextView>(R.id.day_temp).apply {
+                text = "${day.max}° / ${day.min}°"
+                thinFace?.let { typeface = it }
+            }
+            v.findViewById<TextView>(R.id.day_index).text = String.format("%02d", forecast.childCount + 1)
             forecast.addView(v)
         }
     }

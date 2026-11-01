@@ -38,13 +38,12 @@
             android:id="@+id/clock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-thin"
             android:includeFontPadding="false"
-            android:letterSpacing="0.04"
+            android:letterSpacing="0.02"
             android:shadowColor="#80000000"
             android:shadowRadius="18"
             android:textColor="@color/text"
-            android:textSize="150sp" />
+            android:textSize="170sp" />
 
         <TextView
             android:id="@+id/date"
@@ -57,6 +56,11 @@
             android:textAllCaps="true"
             android:textColor="@color/text_soft"
             android:textSize="13sp" />
+
+        <pl.fouroptima.mitvlauncher.RulerView
+            android:layout_width="520dp"
+            android:layout_height="12dp"
+            android:layout_marginTop="18dp" />
 
         <LinearLayout
             android:id="@+id/weather"
@@ -78,12 +82,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:fontFamily="sans-serif-thin"
                 android:includeFontPadding="false"
                 android:shadowColor="#80000000"
                 android:shadowRadius="10"
                 android:textColor="@color/text"
-                android:textSize="44sp" />
+                android:textSize="48sp" />
 
             <TextView
                 android:id="@+id/weather_desc"
@@ -101,7 +104,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="18dp"
-                android:fontFamily="sans-serif-light"
+                android:fontFamily="monospace"
                 android:shadowColor="#80000000"
                 android:shadowRadius="10"
                 android:textColor="@color/text_muted"
@@ -112,7 +115,7 @@
             android:id="@+id/forecast"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
+            android:layout_marginTop="30dp"
             android:orientation="horizontal" />
     </LinearLayout>
 

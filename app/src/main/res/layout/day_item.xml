@@ -2,8 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginStart="14dp"
-    android:layout_marginEnd="14dp"
+    android:layout_marginStart="22dp"
+    android:layout_marginEnd="22dp"
     android:gravity="center_horizontal"
     android:orientation="vertical">
 
@@ -11,7 +11,8 @@
         android:id="@+id/day_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:letterSpacing="0.15"
+        android:letterSpacing="0.22"
+        android:textAllCaps="true"
         android:textColor="@color/text_muted"
         android:textSize="12sp" />
 
@@ -27,7 +28,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:fontFamily="sans-serif-light"
         android:textColor="@color/text"
-        android:textSize="14sp" />
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/day_index"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:alpha="0.35"
+        android:fontFamily="monospace"
+        android:textColor="@color/text"
+        android:textSize="10sp" />
 </LinearLayout>
