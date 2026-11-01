@@ -30,6 +30,8 @@ class MainActivity : Activity() {
     private lateinit var adapter: TileAdapter
     private lateinit var favorites: Favorites
     private lateinit var updates: UpdateManager
+    private lateinit var weather: Weather
+    private var weatherInfo: WeatherInfo? = null
 
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
@@ -62,6 +64,9 @@ class MainActivity : Activity() {
 
         favorites = Favorites(this)
         updates = UpdateManager(this)
+        weather = Weather(this)
+        weatherInfo = weather.cached()
+        showWeather()
         adapter = TileAdapter(::onTileClick, ::onTileLongClick, ::onTileFocus, SPAN)
 
         grid.layoutManager = GridLayoutManager(this, SPAN).apply {
@@ -71,6 +76,7 @@ class MainActivity : Activity() {
         }
         grid.adapter = adapter
         grid.itemAnimator = null
+        adapter.weather = weatherInfo
 
         val packages = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
@@ -96,6 +102,7 @@ class MainActivity : Activity() {
 
         // Ciche sprawdzenie nowej wersji co najwyżej raz na 30 minut
         if (System.currentTimeMillis() - lastUpdateCheck > UPDATE_INTERVAL_MS) checkForUpdates(silent = true)
+        if (weatherInfo?.isStale != false) refreshWeather()
     }
 
     override fun onPause() {
@@ -130,10 +137,33 @@ class MainActivity : Activity() {
         adapter.refreshGreeting()
     }
 
+    private fun refreshWeather() {
+        io.execute {
+            val result = runCatching { weather.fetch() }.getOrNull() ?: return@execute
+            main.post {
+                weatherInfo = result
+                showWeather()
+                adapter.weather = result
+            }
+        }
+    }
+
+    private fun showWeather() {
+        val w = weatherInfo ?: return
+        val box = findViewById<android.view.View>(R.id.weather)
+        box.visibility = android.view.View.VISIBLE
+        findViewById<android.widget.ImageView>(R.id.weather_icon).setImageResource(w.iconRes)
+        findViewById<TextView>(R.id.weather_temp).text = "${w.temp}°"
+        findViewById<TextView>(R.id.weather_desc).text = getString(w.descriptionRes)
+        findViewById<TextView>(R.id.weather_range).text =
+            if (w.city.isNotBlank()) getString(R.string.weather_range, w.max, w.min, w.city)
+            else getString(R.string.weather_range_nocity, w.max, w.min)
+    }
+
     /** Wybrany kafelek trafia na scenę; w rzędzie Ulubione pokazujemy też całą scenę (przewinięcie na górę). */
     private fun onTileFocus(row: Row) {
         adapter.showInHero(row)
-        if (row is Row.App && row.inFavorites && grid.computeVerticalScrollOffset() > 0) grid.smoothScrollToPosition(0)
+        if (row is Row.App && (row.inFavorites || row.inRecent) && grid.computeVerticalScrollOffset() > 0) grid.smoothScrollToPosition(0)
     }
 
     private fun loadApps() {
@@ -172,6 +202,12 @@ class MainActivity : Activity() {
             favApps.forEach { rows += Row.App(it, inFavorites = true, isFavorite = true) }
         }
 
+        val recentApps = favorites.recent().mapNotNull { byPackage[it] }
+        if (recentApps.isNotEmpty()) {
+            rows += Row.Section(getString(R.string.section_recent))
+            recentApps.forEach { rows += Row.App(it, inFavorites = false, isFavorite = it.packageName in favSet, inRecent = true) }
+        }
+
         rows += Row.Section(getString(R.string.section_shortcuts))
         rows += Row.Action(ACTION_SETTINGS, getString(R.string.action_settings), R.drawable.ic_settings, null)
         rows += Row.Action(ACTION_WIFI, getString(R.string.action_wifi), R.drawable.ic_wifi, null)
@@ -196,7 +232,7 @@ class MainActivity : Activity() {
     private fun focusIndex(index: Int) {
         if (index < 0) return
         // Ulubione leżą tuż pod sceną – wtedy pokazujemy ekran od samej góry
-        val top = (adapter.rows.getOrNull(index) as? Row.App)?.inFavorites == true
+        val top = (adapter.rows.getOrNull(index) as? Row.App)?.let { it.inFavorites || it.inRecent } == true
         grid.post {
             grid.scrollToPosition(if (top) 0 else index)
             grid.post { grid.findViewHolderForAdapterPosition(index)?.itemView?.requestFocus() }
@@ -207,7 +243,13 @@ class MainActivity : Activity() {
         when (row) {
             is Row.App -> {
                 val intent = AppRepository.launchIntent(this, row.app.packageName)
-                if (intent == null) toast(getString(R.string.cannot_open, row.app.label)) else start(intent)
+                if (intent == null) {
+                    toast(getString(R.string.cannot_open, row.app.label))
+                } else {
+                    start(intent)
+                    favorites.markOpened(row.app.packageName)
+                    grid.postDelayed({ render() }, 600) // rząd „Ostatnio” odświeży się, gdy wrócisz
+                }
             }
             is Row.Action -> when (row.id) {
                 ACTION_SETTINGS -> start(Intent(Settings.ACTION_SETTINGS))

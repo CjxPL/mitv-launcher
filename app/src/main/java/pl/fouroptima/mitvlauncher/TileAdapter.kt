@@ -27,8 +27,8 @@ sealed class Row {
     }
 
     /** [inFavorites] = kafelek w rzędzie Ulubione (ta sama aplikacja może być też niżej, na liście wszystkich). */
-    data class App(val app: AppEntry, val inFavorites: Boolean, val isFavorite: Boolean) : Row() {
-        override val key get() = (if (inFavorites) "fav:" else "all:") + app.packageName
+    data class App(val app: AppEntry, val inFavorites: Boolean, val isFavorite: Boolean, val inRecent: Boolean = false) : Row() {
+        override val key get() = (if (inFavorites) "fav:" else if (inRecent) "recent:" else "all:") + app.packageName
     }
 
     data class Action(val id: Int, val label: String, val iconRes: Int, val badge: String?) : Row() {
@@ -50,6 +50,13 @@ class TileAdapter(
 
     private var hero: HeroHolder? = null
     private var heroRow: Row? = null
+
+    /** Pogoda pokazywana na scenie powitalnej (null = brak). */
+    var weather: WeatherInfo? = null
+        set(value) {
+            field = value
+            refreshGreeting()
+        }
 
     init {
         setHasStableIds(true)
@@ -136,12 +143,22 @@ class TileAdapter(
         private val subtitle: TextView = view.findViewById(R.id.hero_subtitle)
         private var front = bgA
 
+        init {
+            poster.clipToOutline = true
+        }
+
         fun show(row: Row?, animate: Boolean) {
             val res = itemView.resources
             val app = (row as? Row.App)?.app
             when {
                 app != null -> {
-                    eyebrow.text = res.getString(if ((row as Row.App).isFavorite) R.string.hero_favorite else R.string.hero_app)
+                    eyebrow.text = res.getString(
+                        when {
+                            (row as Row.App).inRecent -> R.string.hero_recent
+                            row.isFavorite -> R.string.hero_favorite
+                            else -> R.string.hero_app
+                        },
+                    )
                     title.text = app.label
                     subtitle.text = res.getString(R.string.hero_open_hint)
                     swapBackground(Artwork.blurred(app), animate)
@@ -178,8 +195,14 @@ class TileAdapter(
                             else -> R.string.greeting_evening
                         },
                     )
-                    subtitle.text = res.getString(R.string.hero_default_hint)
-                    swapBackground(null, animate)
+                    val w = weather
+                    subtitle.text = if (w != null) {
+                        res.getString(R.string.hero_weather, w.temp, res.getString(w.descriptionRes)) +
+                            "  ·  " + res.getString(R.string.hero_default_hint)
+                    } else {
+                        res.getString(R.string.hero_default_hint)
+                    }
+                    swapBackground(null, animate, timeOfDayBackground(hour))
                     poster.visibility = View.GONE
                 }
             }
@@ -196,10 +219,17 @@ class TileAdapter(
             }
         }
 
+        private fun timeOfDayBackground(hour: Int) = when (hour) {
+            in 5..8 -> R.drawable.hero_morning
+            in 9..16 -> R.drawable.hero_day
+            in 17..20 -> R.drawable.hero_evening
+            else -> R.drawable.hero_night
+        }
+
         /** Przenikanie dwóch warstw tła. */
-        private fun swapBackground(bitmap: android.graphics.Bitmap?, animate: Boolean) {
+        private fun swapBackground(bitmap: android.graphics.Bitmap?, animate: Boolean, fallbackRes: Int = R.drawable.hero_default) {
             val back = if (front === bgA) bgB else bgA
-            if (bitmap != null) back.setImageBitmap(bitmap) else back.setImageResource(R.drawable.hero_default)
+            if (bitmap != null) back.setImageBitmap(bitmap) else back.setImageResource(fallbackRes)
             if (animate) {
                 back.alpha = 0f
                 back.animate().alpha(1f).setDuration(380).start()
