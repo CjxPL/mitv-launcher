@@ -38,7 +38,7 @@
     <string name="hero_update">Sprawdź, czy jest nowa wersja launchera</string>
     <string name="hero_update_new">Nowa wersja czeka na instalację</string>
     <string name="section_apps">Aplikacje</string>
-    <string name="section_recent">Ostatnio oglądane</string>
+    <string name="section_recent">Ostatnio otwierane</string>
     <string name="hero_recent">Ostatnio</string>
     <string name="hero_weather">%1$d°, %2$s</string>
     <string name="weather_range">%1$d° / %2$d°  ·  %3$s</string>
@@ -63,4 +63,7 @@
     <string name="panel_close">Zamknij</string>
     <string name="panel_close_sub">Albo naciśnij Wstecz</string>
     <string name="footer">MiTV Launcher %1$s  ·  przytrzymaj OK – ulubione  ·  przycisk w rogu – skróty</string>
+    <string name="opened_today">Otwierane dziś o %1$s</string>
+    <string name="opened_yesterday">Otwierane wczoraj o %1$s</string>
+    <string name="opened_on">Otwierane %1$s</string>
 </resources>

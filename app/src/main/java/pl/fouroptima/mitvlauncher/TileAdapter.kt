@@ -51,6 +51,9 @@ class TileAdapter(
     private var hero: HeroHolder? = null
     private var heroRow: Row? = null
 
+    /** Zdanie „Otwierane dziś o …” dla aplikacji (null = pokaż podpowiedź o pilocie). */
+    var openedText: ((String) -> String?)? = null
+
     /** Pogoda pokazywana na scenie powitalnej (null = brak). */
     var weather: WeatherInfo? = null
         set(value) {
@@ -165,7 +168,7 @@ class TileAdapter(
                         },
                     )
                     title.text = app.label
-                    subtitle.text = res.getString(R.string.hero_open_hint)
+                    subtitle.text = openedText?.invoke(app.packageName) ?: res.getString(R.string.hero_open_hint)
                     swapBackground(Artwork.blurred(app), animate)
                     poster.visibility = View.VISIBLE
                     if (app.banner != null) {

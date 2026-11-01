@@ -33,8 +33,14 @@ class Favorites(context: Context) {
         val items = recent().toMutableList()
         items.remove(pkg)
         items.add(0, pkg)
-        prefs.edit().putString(RECENT, items.take(MAX_RECENT).joinToString("\n")).apply()
+        prefs.edit()
+            .putString(RECENT, items.take(MAX_RECENT).joinToString("\n"))
+            .putLong("opened:$pkg", System.currentTimeMillis())
+            .apply()
     }
+
+    /** Kiedy ostatnio otwarto aplikację (0 = nigdy z tego launchera). */
+    fun openedAt(pkg: String): Long = prefs.getLong("opened:$pkg", 0L)
 
     private fun save(items: List<String>) {
         prefs.edit().putString(KEY, items.joinToString("\n")).apply()

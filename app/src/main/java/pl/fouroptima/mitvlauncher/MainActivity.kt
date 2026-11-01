@@ -87,6 +87,7 @@ class MainActivity : Activity() {
         grid.adapter = adapter
         grid.itemAnimator = null
         adapter.weather = weatherInfo
+        adapter.openedText = ::openedText
 
         val packages = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
@@ -221,6 +222,22 @@ class MainActivity : Activity() {
         clock.text = timeFormat.format(now)
         date.text = dateFormat.format(now).replaceFirstChar { it.titlecase(polish) }
         adapter.refreshGreeting()
+    }
+
+    private fun openedText(pkg: String): String? {
+        val at = favorites.openedAt(pkg)
+        if (at == 0L) return null
+        val time = timeFormat.format(Date(at))
+        val day = java.util.Calendar.getInstance().apply { timeInMillis = at }
+        val today = java.util.Calendar.getInstance()
+        val sameDay = { a: java.util.Calendar, b: java.util.Calendar ->
+            a.get(java.util.Calendar.YEAR) == b.get(java.util.Calendar.YEAR) &&
+                a.get(java.util.Calendar.DAY_OF_YEAR) == b.get(java.util.Calendar.DAY_OF_YEAR)
+        }
+        if (sameDay(day, today)) return getString(R.string.opened_today, time)
+        today.add(java.util.Calendar.DAY_OF_YEAR, -1)
+        if (sameDay(day, today)) return getString(R.string.opened_yesterday, time)
+        return getString(R.string.opened_on, dateFormat.format(Date(at)).lowercase(polish))
     }
 
     private fun refreshWeather() {
